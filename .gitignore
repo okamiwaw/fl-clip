@@ -1,0 +1,5 @@
+# 忽略特定目录
+Bio_ClinicalBERT/
+data/
+local_data/
+pretrained/
