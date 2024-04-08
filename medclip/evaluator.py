@@ -38,7 +38,7 @@ class Evaluator:
         label_list = []
         for data in eval_dataloader:
             with torch.no_grad():
-                data = data.to(self.device)
+                data = {k: v.to(self.device) if isinstance(v, torch.Tensor) else v for k, v in data.items()}
                 outputs = self.clf(**data)
                 pred = outputs['logits']
             pred_list.append(pred)
