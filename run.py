@@ -1,5 +1,5 @@
 import os
-from multiprocessing import Process
+import threading
 import random
 import numpy as np
 import torch
@@ -94,7 +94,7 @@ class Runner:
                 server.save_model()
                 print(f"{client_id} is starting training!")
                 deviceA = "cuda:0"
-                deviceB = "cuda:1"
+                deviceB = "cuda:0"
                 log_file = constants.LOGFILE
                 train_dataloader = get_train_dataloader(client_id)
                 val_dataloader = get_valid_dataloader(client_id)
@@ -113,12 +113,12 @@ class Runner:
                                 select_label=clients_label[client_id]
                                 )
                 client.validate()
-                p1 = Process(target=client.local_train())
-                p2 = Process(target=client.person_train())
-                p1.start()
-                p2.start()
-                p1.join()
-                p2.join()
+                t1 = threading.Thread(target=client.local_train())
+                t2 = threading.Thread(target=client.person_train())
+                t1.start()
+                t2.start()
+                t1.join()
+                t2.join()
                 client.select_train()
                 diff_local = client.compute_diff(server.global_model, "global")
                 diff_select = client.compute_diff(server.select_model, "select")
