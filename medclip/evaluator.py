@@ -38,7 +38,7 @@ class Evaluator:
         label_list = []
         for data in eval_dataloader:
             with torch.no_grad():
-                data.to(self.device)
+                data = data.to(self.device)
                 outputs = self.clf(**data)
                 pred = outputs['logits']
             pred_list.append(pred)
