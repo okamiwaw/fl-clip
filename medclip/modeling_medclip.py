@@ -9,8 +9,10 @@ from torch import nn
 from transformers import AutoModel, AutoTokenizer
 import numpy as np
 import torchvision
-
+import logging
+logging.getLogger("transformers.modeling_utils").setLevel(logging.ERROR)
 from . import constants
+
 
 class MedCLIPTextModel(nn.Module):
     def __init__(self,
@@ -53,10 +55,10 @@ class MedCLIPVisionModel(nn.Module):
         self.model.fc = nn.Linear(num_fts, 512, bias=False) # projection head
         if checkpoint is not None:
             state_dict = torch.load(os.path.join(checkpoint, constants.WEIGHTS_NAME))
-            missing_keys, unexpected_keys = self.load_state_dict(state_dict, strict=False)
-            print('missing keys:', missing_keys)
-            print('unexpected keys:', unexpected_keys)
-            print('load model weight from:', checkpoint)
+            # missing_keys, unexpected_keys = self.load_state_dict(state_dict, strict=False)
+            # print('missing keys:', missing_keys)
+            # print('unexpected keys:', unexpected_keys)
+            # print('load model weight from:', checkpoint)
         if medclip_checkpoint is not None:
             self.load_from_medclip(medclip_checkpoint)
 
@@ -68,10 +70,10 @@ class MedCLIPVisionModel(nn.Module):
         for key in state_dict.keys():
             if 'vision_model' in key:
                 new_state_dict[key.replace('vision_model.','')] = state_dict[key]
-        missing_keys, unexpected_keys = self.load_state_dict(new_state_dict, strict=False)
-        print('missing keys:', missing_keys)
-        print('unexpected keys:', unexpected_keys)
-        print('load model weight from:', checkpoint)
+        # missing_keys, unexpected_keys = self.load_state_dict(new_state_dict, strict=False)
+        # print('missing keys:', missing_keys)
+        # print('unexpected keys:', unexpected_keys)
+        # print('load model weight from:', checkpoint)
 
     def forward(self, pixel_values, **kwargs):
         '''args:
@@ -95,10 +97,10 @@ class MedCLIPVisionModelViT(nn.Module):
         self.projection_head = nn.Linear(768, 512, bias=False)
         if checkpoint is not None:
             state_dict = torch.load(os.path.join(checkpoint, constants.WEIGHTS_NAME))
-            missing_keys, unexpected_keys = self.load_state_dict(state_dict, strict=False)
-            print('missing keys:', missing_keys)
-            print('unexpected keys:', unexpected_keys)
-            print('load model weight from:', checkpoint)
+            # missing_keys, unexpected_keys = self.load_state_dict(state_dict, strict=False)
+            # print('missing keys:', missing_keys)
+            # print('unexpected keys:', unexpected_keys)
+            # print('load model weight from:', checkpoint)
         if medclip_checkpoint is not None:
             self.load_from_medclip(medclip_checkpoint)
 
@@ -110,10 +112,10 @@ class MedCLIPVisionModelViT(nn.Module):
         for key in state_dict.keys():
             if 'vision_model' in key:
                 new_state_dict[key.replace('vision_model.','')] = state_dict[key]
-        missing_keys, unexpected_keys = self.load_state_dict(new_state_dict, strict=False)
-        print('missing keys:', missing_keys)
-        print('unexpected keys:', unexpected_keys)
-        print('load model weight from:', checkpoint)
+        # missing_keys, unexpected_keys = self.load_state_dict(new_state_dict, strict=False)
+        # print('missing keys:', missing_keys)
+        # print('unexpected keys:', unexpected_keys)
+        # print('load model weight from:', checkpoint)
 
     def forward(self, pixel_values, project=True):
         '''args:
@@ -136,7 +138,6 @@ class MedCLIPModel(nn.Module):
         super().__init__()
         text_proj_bias = False
         assert vision_cls in [MedCLIPVisionModel, MedCLIPVisionModelViT], 'vision_cls should be one of [MedCLIPVisionModel, MedCLIPVisionModelViT]'
-
         self.vision_model = vision_cls(checkpoint=vision_checkpoint)
         self.text_model = MedCLIPTextModel(proj_bias=False)
 

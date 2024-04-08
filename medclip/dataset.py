@@ -27,6 +27,8 @@ from .prompts import process_class_prompts, process_class_prompts_for_tuning
 from .prompts import generate_chexpert_class_prompts
 from . import constants
 
+import logging
+logging.basicConfig(level=logging.WARNING)
 
 class MedCLIPFeatureExtractor(CLIPFeatureExtractor):
     def __init__(self,
@@ -172,7 +174,7 @@ class ImageTextContrastiveDataset(Dataset):
         self.dataset_path = dataset_path
         file_name = os.path.join(
             datalist_path,
-             client_id +".csv")
+             client_id +"_t.csv")
         filename = file_name
         df_list = pd.read_csv(filename)
         self.df = df_list
@@ -182,8 +184,6 @@ class ImageTextContrastiveDataset(Dataset):
         # could try contrast, brightness, fog
         if imgtransform is None:
             self.transform = transforms.Compose([
-                # transforms.RandomHorizontalFlip(0.5),
-                # transforms.ColorJitter(0.1,0.1),
                 transforms.ToTensor(),
                 transforms.Resize((constants.IMG_SIZE, constants.IMG_SIZE)),
                 transforms.Normalize(mean=[0.5862785803043838], std=[0.27950088968644304])],
@@ -192,7 +192,7 @@ class ImageTextContrastiveDataset(Dataset):
             self.transform = imgtransform
 
         # use labeled sentences as prompts for chexpert training
-        self.sentence_label = pd.read_csv('../local_data/sentence-label.csv')
+        self.sentence_label = pd.read_csv('local_data/sentence-label.csv')
         self._preprocess_sentence_label()
         self._build_prompt_sentence()
 
@@ -336,9 +336,9 @@ class ImageTextContrastiveCollator:
         '''
         if use_eda:
             import nltk
-            nltk.download('stopwords')
-            nltk.download('omw-1.4')
-            nltk.download('wordnet')
+            nltk.download('stopwords', quiet=True)
+            nltk.download('omw-1.4', quiet=True)
+            nltk.download('wordnet', quiet=True)
             from textaugment import EDA
             self.eda = EDA()
         else:
@@ -378,12 +378,13 @@ class ImageTextContrastiveCollator:
 
 class ZeroShotImageDataset(Dataset):
     def __init__(self,
-                 datalist=['chexpert-5x200'],
                  class_names=None,
                  imgtransform=None,
-                 dataset_path = None
+                 dataset_path=None,
+                 datalist_path=None,
+                 client_id=None
                  ) -> None:
-        '''support data list in mimic-5x200, chexpert-5x200, rsna-balanced-test, covid-test
+        '''
         args:
             imgtransform: a torchvision transform
             cls_prompts: a dict of prompt sentences, cls:[sent1, sent2, ..],
@@ -401,13 +402,14 @@ class ZeroShotImageDataset(Dataset):
 
         self.class_names = class_names
         self.dataset_path = dataset_path
+        self.datalist_path = datalist_path
+        self.client_id = client_id
         # imgpath, subject_id, report, labels...(14 labels)
         df_list = []
-        for data in datalist:
-            filename = f'../local_data/{data}.csv'
-            print('load data from', filename)
-            df = pd.read_csv(filename, index_col=0)
-            df_list.append(df)
+        filename = f'{self.datalist_path}/{self.client_id}_v.csv'
+        print('load data from', filename)
+        df = pd.read_csv(filename, index_col=0)
+        df_list.append(df)
         self.df = pd.concat(df_list, axis=0).reset_index(drop=True)
 
     def __getitem__(self, index):

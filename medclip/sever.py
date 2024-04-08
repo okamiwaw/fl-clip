@@ -67,7 +67,7 @@ class Server:
                 self.person_models[client_id].load_state_dict(person_weight)
 
     def save_model(self):
-        save_dir = f'data/models/{self.current_round}'
+        save_dir = f'outputs/models/{self.current_round}'
         os.makedirs(save_dir, exist_ok=True)
         global_path = os.path.join(save_dir, "global_model.pth")
         torch.save(self.global_model.state_dict(), global_path)

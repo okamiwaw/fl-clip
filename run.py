@@ -1,8 +1,10 @@
 import os
+from multiprocessing import Process
 import random
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
+from torch.utils.tensorboard import SummaryWriter
 from torchvision import transforms
 
 from medclip import constants, MedCLIPModel, MedCLIPVisionModelViT
@@ -39,20 +41,22 @@ def get_train_dataloader(client_id):
     return train_dataloader
 
 
-def get_valid_dataloader():
+def get_valid_dataloader(client_id):
     dataset_path = constants.DATASET_PATH
+    datalist_path = constants.DATALIST_PATH
     cls_prompts = generate_chexpert_class_prompts(n=10)
-    val_data = ZeroShotImageDataset(['chexpert_5x200'],
-                                    class_names=constants.CHEXPERT_COMPETITION_TASKS,
-                                    dataset_path=dataset_path)
+    val_data = ZeroShotImageDataset(class_names=constants.CHEXPERT_COMPETITION_TASKS,
+                                    dataset_path=dataset_path,
+                                    datalist_path=datalist_path,
+                                    client_id=client_id)
     val_collate_fn = ZeroShotImageCollator(cls_prompts=cls_prompts,
                                            mode='multiclass')
     val_dataloader = DataLoader(val_data,
-                                batch_size=100,
+                                batch_size=50,
                                 collate_fn=val_collate_fn,
                                 shuffle=False,
                                 pin_memory=True,
-                                num_workers=1,
+                                num_workers=0,
                                 )
     return val_dataloader
 
@@ -71,6 +75,7 @@ class Runner:
         os.environ['PYTHONASHSEED'] = str(seed)
         os.environ['TOKENIZERS_PARALLELISM'] = 'false'
 
+
     def config(self):
         self.client_ids = constants.CLIENT_IDS
         self.rounds = constants.ROUNDS
@@ -82,28 +87,36 @@ class Runner:
 
     def train(self):
         server = self.server
+        writer = SummaryWriter('outputs/log')
         for r in range(self.rounds):
             print(f"round {r} / {self.rounds} is beginning!")
             for client_id in self.client_ids:
-                if r % 10 == 0:
-                    server.save_model()
+                server.save_model()
                 print(f"{client_id} is starting training!")
                 device = "cuda:0"
+                log_file = constants.LOGFILE
                 train_dataloader = get_train_dataloader(client_id)
-                val_dataloader = get_valid_dataloader()
+                val_dataloader = get_valid_dataloader(client_id)
                 clients_label = constants.CLIENTS_LABEL
                 client = Client(client_id=client_id,
                                 train_dataloader=train_dataloader,
                                 val_dataloader=val_dataloader,
                                 device=device,
+                                round=r,
+                                writer=writer,
+                                log_file=log_file,
                                 local_dict=server.global_model.state_dict(),
                                 person_dict=server.person_models[client_id].state_dict(),
                                 select_dict=server.select_model.state_dict(),
                                 select_label=clients_label[client_id]
                                 )
                 client.validate()
-                client.local_train()
-                client.person_train()
+                p1 = Process(target=client.local_train())
+                p2 = Process(target=client.person_train())
+                p1.start()
+                p2.start()
+                p1.join()
+                p2.join()
                 client.select_train()
                 diff_local = client.compute_diff(server.global_model, "global")
                 diff_select = client.compute_diff(server.select_model, "select")
@@ -113,6 +126,8 @@ class Runner:
                                person_model=client.person_model
                                )
             server.aggregate()
+        writer.close()
+
 
 def main():
     runner = Runner()

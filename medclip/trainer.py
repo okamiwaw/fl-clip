@@ -130,7 +130,6 @@ class Trainer:
                         with autocast():
                             loss_model_return = loss_model(**data)
                         loss_value = loss_weight * loss_model_return['loss_value']
-                        loss_value = loss_value
                         scale_before_step = scaler.get_scale()
                         scaler.scale(loss_value).backward()
                         scaler.unscale_(optimizer)

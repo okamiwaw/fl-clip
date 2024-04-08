@@ -7,15 +7,16 @@ IMG_STD = .27950088968644304
 SELECT_NUM = 3
 VIT_BERT_LEARNING_RATE = 2e-5
 SELECT_MODEL_LEARNING_RATE = 1e-5
+WEIGHT_DECAY = 0.01
 SEED = 42
-# DATASET_PATH = "D:\\Codes\\ML\\fl-clip\\data\\data_set"
-# DATALIST_PATH = "D:\\Codes\\ML\\fl-clip\\data\\data_list"
-DATASET_PATH = "/root/autodl-tmp/fl-clip/data/data_set"
-DATALIST_PATH = "/root/autodl-tmp/fl-clip/data/data_list"
-CLIENT_IDS = ["client_1", "client_2", "client_3"]
+DATASET_PATH = "D:\\Codes\\ML\\fl-clip\\data\\data_set"
+DATALIST_PATH = "D:\\Codes\\ML\\fl-clip\\data\\data_list"
+# DATASET_PATH = "/root/autodl-tmp/fl-clip/data/data_set"
+# DATALIST_PATH = "/root/autodl-tmp/fl-clip/data/data_list"
+CLIENT_IDS = ["client_1", "client_2", "client_3", "client_4"]
 ROUNDS = 100
-CLIENTS_LABEL = {"client_1": [1, 0, 0], "client_2": [0, 1, 0], "client_3": [0, 0, 1]}
-
+CLIENTS_LABEL = {"client_1": [1, 0, 0, 0], "client_2": [0, 1, 0, 0], "client_3": [0, 0, 1, 0], "client_4": [0, 0, 0, 1]}
+LOGFILE = "./outputs/log/log.txt"
 CHEXPERT_TASKS = [
     "No Finding",
     "Enlarged Cardiomediastinum",

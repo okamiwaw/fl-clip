@@ -3,3 +3,4 @@ Bio_ClinicalBERT/
 data/
 local_data/
 pretrained/
+outputs/
