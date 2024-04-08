@@ -41,7 +41,7 @@ class Client:
         self.train_loader = train_dataloader
         self.valid_loader = val_dataloader
         self.local_model = MedCLIPModel(vision_cls=MedCLIPVisionModelViT).to(self.deviceA)
-        self.person_model = MedCLIPModel(vision_cls=MedCLIPVisionModelViT).to(self.deviceB)
+        self.person_model = MedCLIPModel(vision_cls=MedCLIPVisionModelViT).to(self.deviceA)
         self.select_model = vgg11(
             num_classes=constants.SELECT_NUM
         ).to(self.deviceA)
@@ -84,6 +84,7 @@ class Client:
             progress_bar.set_postfix({"loss": loss.item()})
 
     def person_train(self):
+        self.person_model.to(self.deviceB)
         print("personal model training starts")
         writer = self.writer
         loss_model = ImageTextContrastiveLoss(self.person_model).to(self.deviceB)
@@ -156,7 +157,6 @@ class Client:
             medclip_clf=medclip_clf,
             eval_dataloader=valid_loader,
             mode='multiclass',
-            device=self.deviceA
         )
         scores = evaluator.evaluate()
         metric = scores['acc']
@@ -167,7 +167,6 @@ class Client:
             medclip_clf=medclip_clf,
             eval_dataloader=valid_loader,
             mode='multiclass',
-            device=self.deviceB
         )
         scores = evaluator.evaluate()
         metric = scores['acc']

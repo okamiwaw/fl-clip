@@ -19,7 +19,6 @@ class Evaluator:
         medclip_clf,
         eval_dataloader=None,
         mode=None,
-        device=None
         ) -> None:
         '''specify class_names if doing zero-shot classification.
         mode: `binary`, 'multiclass`, or `multilabel`,
@@ -38,7 +37,6 @@ class Evaluator:
         label_list = []
         for data in eval_dataloader:
             with torch.no_grad():
-                data = {k: v.to(self.device) if isinstance(v, torch.Tensor) else v for k, v in data.items()}
                 outputs = self.clf(**data)
                 pred = outputs['logits']
             pred_list.append(pred)
