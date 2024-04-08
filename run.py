@@ -32,11 +32,11 @@ def get_train_dataloader(client_id):
                                              imgtransform=transform, client_id=client_id)
     train_collate_fn = ImageTextContrastiveCollator()
     train_dataloader = DataLoader(train_data,
-                                  batch_size=50,
+                                  batch_size=10,
                                   collate_fn=train_collate_fn,
                                   shuffle=True,
                                   pin_memory=True,
-                                  num_workers=1,
+                                  num_workers=0,
                                   )
     return train_dataloader
 
@@ -77,7 +77,7 @@ class Runner:
 
 
     def config(self):
-        self.client_ids =  constants.CLIENT_IDS
+        self.client_ids = constants.CLIENT_IDS
         self.rounds = constants.ROUNDS
         global_model = MedCLIPModel(vision_cls=MedCLIPVisionModelViT)
         select_model = vgg11(
@@ -93,7 +93,8 @@ class Runner:
             for client_id in self.client_ids:
                 server.save_model()
                 print(f"{client_id} is starting training!")
-                device = "cuda:0"
+                deviceA = "cuda:0"
+                deviceB = "cuda:1"
                 log_file = constants.LOGFILE
                 train_dataloader = get_train_dataloader(client_id)
                 val_dataloader = get_valid_dataloader(client_id)
@@ -101,7 +102,8 @@ class Runner:
                 client = Client(client_id=client_id,
                                 train_dataloader=train_dataloader,
                                 val_dataloader=val_dataloader,
-                                device=device,
+                                deviceA=deviceA,
+                                deviceB=deviceB,
                                 round=r,
                                 writer=writer,
                                 log_file=log_file,

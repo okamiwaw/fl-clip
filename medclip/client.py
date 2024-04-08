@@ -19,7 +19,8 @@ class Client:
                  client_id=None,
                  train_dataloader=None,
                  val_dataloader=None,
-                 device='cpu',
+                 deviceA='cpu',
+                 deviceB='cpu',
                  round=0,
                  writer=None,
                  epochs=1,
@@ -31,18 +32,19 @@ class Client:
                  ):
         self.client_id = client_id
         self.round = round
-        self.device = device
+        self.deviceA = deviceA
+        self.deviceB = deviceB
         self.epochs = epochs
         self.log_file = log_file
         self.writer = writer
         self.select_label = select_label
         self.train_loader = train_dataloader
         self.valid_loader = val_dataloader
-        self.local_model = MedCLIPModel(vision_cls=MedCLIPVisionModelViT).to(self.device)
-        self.person_model = MedCLIPModel(vision_cls=MedCLIPVisionModelViT).to(self.device)
+        self.local_model = MedCLIPModel(vision_cls=MedCLIPVisionModelViT).to(self.deviceA)
+        self.person_model = MedCLIPModel(vision_cls=MedCLIPVisionModelViT).to(self.deviceB)
         self.select_model = vgg11(
             num_classes=constants.SELECT_NUM
-        ).to(self.device)
+        ).to(self.deviceA)
         self.textvision_lr = constants.VIT_BERT_LEARNING_RATE
         self.weight_decay = constants.WEIGHT_DECAY
         self.select_lr = constants.SELECT_MODEL_LEARNING_RATE
@@ -56,7 +58,7 @@ class Client:
     def local_train(self):
         print("local model training starts")
         writer = self.writer
-        loss_model = ImageTextContrastiveLoss(self.local_model).to(self.device)
+        loss_model = ImageTextContrastiveLoss(self.local_model).to(self.deviceA)
         param_optimizer = list(loss_model.named_parameters())
         no_decay = ['bias', 'LayerNorm.bias', 'LayerNorm.weight']
         optimizer_grouped_parameters = [
@@ -84,7 +86,7 @@ class Client:
     def person_train(self):
         print("personal model training starts")
         writer = self.writer
-        loss_model = ImageTextContrastiveLoss(self.person_model).to(self.device)
+        loss_model = ImageTextContrastiveLoss(self.person_model).to(self.deviceB)
         param_optimizer = list(loss_model.named_parameters())
         no_decay = ['bias', 'LayerNorm.bias', 'LayerNorm.weight']
         optimizer_grouped_parameters = [
@@ -121,9 +123,9 @@ class Client:
         for i, batch_data in progress_bar:
             optimizer.zero_grad()
             with autocast():
-                inputs = batch_data["pixel_values"].to(self.device)
+                inputs = batch_data["pixel_values"].to(self.deviceA)
                 labels = np.ones((inputs.shape[0], 1)) * select_label
-                labels = torch.tensor(labels).to(self.device)
+                labels = torch.tensor(labels).to(self.deviceA)
                 outputs = self.select_model(inputs)
                 loss = criterion(outputs, labels)
             writer.add_scalar(f'{self.client_id}-select', loss.item(), self.round * len(self.train_loader) + i)
@@ -174,7 +176,7 @@ class Client:
             metric = 0
             for i, batch_data in enumerate(valid_loader):
                 # input and expected output
-                images = batch_data["pixel_values"].to(self.device)
+                images = batch_data["pixel_values"].to(self.deviceA)
                 # generate label vector: image batch_size, same label
                 labels = np.ones((images.shape[0], 1)) * select_label
                 outputs = self.select_model(images)
