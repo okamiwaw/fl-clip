@@ -28,7 +28,6 @@ class Evaluator:
         self.clf = medclip_clf
         self.mode = mode
         self.eval_dataloader = eval_dataloader
-        self.device = device
     def evaluate(self, eval_dataloader=None):
         self.clf.eval()
         if self.eval_dataloader is None and eval_dataloader is not None: self.eval_dataloader = eval_dataloader
