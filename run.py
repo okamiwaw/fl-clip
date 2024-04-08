@@ -77,7 +77,7 @@ class Runner:
 
 
     def config(self):
-        self.client_ids = constants.CLIENT_IDS
+        self.client_ids =  constants.CLIENT_IDS
         self.rounds = constants.ROUNDS
         global_model = MedCLIPModel(vision_cls=MedCLIPVisionModelViT)
         select_model = vgg11(
