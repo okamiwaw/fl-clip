@@ -32,7 +32,7 @@ def get_train_dataloader(client_id):
                                              imgtransform=transform, client_id=client_id)
     train_collate_fn = ImageTextContrastiveCollator()
     train_dataloader = DataLoader(train_data,
-                                  batch_size=10,
+                                  batch_size=50,
                                   collate_fn=train_collate_fn,
                                   shuffle=True,
                                   pin_memory=True,
@@ -112,7 +112,7 @@ class Runner:
                                 select_dict=server.select_model.state_dict(),
                                 select_label=clients_label[client_id]
                                 )
-                # client.validate()
+                client.validate()
                 t1 = threading.Thread(target=client.local_train())
                 t2 = threading.Thread(target=client.person_train())
                 t1.start()
