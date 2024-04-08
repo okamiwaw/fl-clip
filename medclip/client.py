@@ -156,6 +156,7 @@ class Client:
             medclip_clf=medclip_clf,
             eval_dataloader=valid_loader,
             mode='multiclass',
+            device=self.deviceA
         )
         scores = evaluator.evaluate()
         metric = scores['acc']
@@ -166,6 +167,7 @@ class Client:
             medclip_clf=medclip_clf,
             eval_dataloader=valid_loader,
             mode='multiclass',
+            device=self.deviceB
         )
         scores = evaluator.evaluate()
         metric = scores['acc']
