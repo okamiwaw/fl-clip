@@ -152,7 +152,7 @@ class Client:
         scores = evaluator.evaluate()
         metric = scores['acc']
         print(f"local model acc is {metric}")
-        self.log_metric(client=self.client_id, task='local', acc=metric)
+
         medclip_clf = PromptClassifier(self.person_model)
         evaluator = Evaluator(
             medclip_clf=medclip_clf,
@@ -162,7 +162,6 @@ class Client:
         scores = evaluator.evaluate()
         metric = scores['acc']
         print(f"personal model acc is {metric}")
-        self.log_metric(client=self.client_id, task='person', acc=metric)
         self.select_model.eval()
         with torch.no_grad():
             metric = 0
@@ -178,4 +177,3 @@ class Client:
                 metric += acc
             metric /= len(valid_loader)
             print(f"select model acc is {metric}")
-            self.log_metric(client=self.client_id, task='selector', acc=metric)
