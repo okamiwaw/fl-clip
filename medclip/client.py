@@ -21,7 +21,6 @@ class Client:
                  val_dataloader=None,
                  device='cpu',
                  round=0,
-                 writer=None,
                  epochs=1,
                  local_dict=None,
                  person_dict=None,
@@ -34,7 +33,6 @@ class Client:
         self.device = device
         self.epochs = epochs
         self.log_file = log_file
-        self.writer = writer
         self.select_label = select_label
         self.train_loader = train_dataloader
         self.valid_loader = val_dataloader
