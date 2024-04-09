@@ -75,6 +75,7 @@ class Runner:
         torch.cuda.manual_seed(seed)
         os.environ['PYTHONASHSEED'] = str(seed)
         os.environ['TOKENIZERS_PARALLELISM'] = 'false'
+        multiprocessing.set_start_method('spawn')
 
 
     def config(self):

@@ -51,7 +51,7 @@ class Server:
                 continue
             for key in model_dict.keys():
                 if model_dict[key].dtype == torch.float32:
-                    dicts[idx][key] += model_dict[key] / 3
+                    dicts[idx][key] += model_dict[key] / 4
         for client_id in self.client_ids:
             person_weight = weights["person_weights"][client_id].copy()
             for key in weights["person_weights"][client_id]:
