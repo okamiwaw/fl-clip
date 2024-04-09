@@ -41,7 +41,7 @@ class Client:
         self.train_loader = train_dataloader
         self.valid_loader = val_dataloader
         self.local_model = MedCLIPModel(vision_cls=MedCLIPVisionModelViT).to(self.deviceA)
-        self.person_model = MedCLIPModel(vision_cls=MedCLIPVisionModelViT).to(self.deviceA)
+        self.person_model = MedCLIPModel(vision_cls=MedCLIPVisionModelViT).to(self.deviceB)
         self.select_model = vgg11(
             num_classes=constants.SELECT_NUM
         ).to(self.deviceA)
