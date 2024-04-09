@@ -1,5 +1,6 @@
 import os
 import threading
+import multiprocessing
 import random
 import numpy as np
 import torch
@@ -111,13 +112,12 @@ class Runner:
                                 select_label=clients_label[client_id]
                                 )
                 client.validate()
-                t1 = threading.Thread(target=client.person_train())
-                t2 = threading.Thread(target=client.local_train())
-                t1.start()
-                t2.start()
-                t1.join()
-                t2.join()
-                client.local_train()
+                p1 = multiprocessing.Process(target=client.person_train())
+                p2 = multiprocessing.Process(target=client.local_train())
+                p1.start()
+                p2.start()
+                p1.join()
+                p2.join()
                 client.select_train()
                 diff_local = client.compute_diff(server.global_model, "global")
                 diff_select = client.compute_diff(server.select_model, "select")
