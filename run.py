@@ -112,8 +112,8 @@ class Runner:
                                 select_label=clients_label[client_id]
                                 )
                 client.validate()
-                p1 = multiprocessing.Process(target=client.person_train())
-                p2 = multiprocessing.Process(target=client.local_train())
+                p1 = multiprocessing.Process(target=client.person_train)
+                p2 = multiprocessing.Process(target=client.local_train)
                 p1.start()
                 p2.start()
                 p1.join()
