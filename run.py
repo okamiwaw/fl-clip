@@ -110,7 +110,7 @@ class Runner:
                                 select_dict=server.select_model.state_dict(),
                                 select_label=clients_label[client_id]
                                 )
-                # client.validate()
+                client.validate()
                 client.person_train()
                 client.local_train()
                 client.select_train()
