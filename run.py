@@ -37,7 +37,7 @@ def get_train_dataloader(client_id):
                                   collate_fn=train_collate_fn,
                                   shuffle=True,
                                   pin_memory=True,
-                                  num_workers=0,
+                                  num_workers=2,
                                   )
     return train_dataloader
 
