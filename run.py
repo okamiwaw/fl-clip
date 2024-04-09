@@ -5,7 +5,6 @@ import random
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
-from torch.utils.tensorboard import SummaryWriter
 from torchvision import transforms
 
 from medclip import constants, MedCLIPModel, MedCLIPVisionModelViT
@@ -89,7 +88,6 @@ class Runner:
 
     def train(self):
         server = self.server
-        writer = SummaryWriter('outputs/log')
         for r in range(self.rounds):
             print(f"round {r} / {self.rounds} is beginning!")
             for client_id in self.client_ids:
@@ -105,7 +103,6 @@ class Runner:
                                 val_dataloader=val_dataloader,
                                 device=device,
                                 round=r,
-                                writer=writer,
                                 log_file=log_file,
                                 local_dict=server.global_model.state_dict(),
                                 person_dict=server.person_models[client_id].state_dict(),
@@ -128,7 +125,6 @@ class Runner:
                                person_model=client.person_model
                                )
             server.aggregate()
-        writer.close()
 
 
 def main():
