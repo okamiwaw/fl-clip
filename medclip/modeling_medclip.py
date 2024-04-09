@@ -253,6 +253,7 @@ class PromptClassifier(nn.Module):
         (a dict of {'class1':{'input_ids':...,'attention_mask':,...}), 'class2':...}
         '''
         pixel_values = pixel_values.cuda()
+        print(pixel_values.device)
         class_similarities = []
         class_names = []
         for cls_name, cls_text in prompt_inputs.items():
