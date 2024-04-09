@@ -1,6 +1,6 @@
 import os
 import threading
-import multiprocessing
+import torch.multiprocessing as mp
 import random
 import numpy as np
 import torch
@@ -57,7 +57,7 @@ def get_valid_dataloader(client_id):
                                 collate_fn=val_collate_fn,
                                 shuffle=False,
                                 pin_memory=True,
-                                num_workers=0,
+                                num_workers=1,
                                 )
     return val_dataloader
 
@@ -75,7 +75,7 @@ class Runner:
         torch.cuda.manual_seed(seed)
         os.environ['PYTHONASHSEED'] = str(seed)
         os.environ['TOKENIZERS_PARALLELISM'] = 'false'
-        multiprocessing.set_start_method('spawn')
+        mp.set_start_method('spawn')
 
 
     def config(self):
@@ -113,8 +113,8 @@ class Runner:
                                 select_label=clients_label[client_id]
                                 )
                 client.validate()
-                p1 = multiprocessing.Process(target=client.person_train)
-                p2 = multiprocessing.Process(target=client.local_train)
+                p1 = mp.Process(target=client.person_train)
+                p2 = mp.Process(target=client.local_train)
                 p1.start()
                 p2.start()
                 p1.join()
