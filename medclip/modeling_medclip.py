@@ -187,9 +187,10 @@ class MedCLIPModel(nn.Module):
         print('load model weight from:', input_dir)
 
     def encode_text(self, input_ids=None, attention_mask=None):
-        input_ids = input_ids.cuda()
+        device = next(self.parameters()).device
+        input_ids = input_ids.to(device)
         if attention_mask is not None:
-            attention_mask = attention_mask.cuda()
+            attention_mask = attention_mask.to(device)
         text_embeds = self.text_model(input_ids, attention_mask)
         text_embeds = text_embeds / text_embeds.norm(dim=-1, keepdim=True)
         return text_embeds
@@ -207,11 +208,11 @@ class MedCLIPModel(nn.Module):
         return_loss=None,
         **kwargs,
         ):
-        input_ids = input_ids.cuda()
+        device = next(self.parameters()).device
+        input_ids = input_ids.to(device)
         if attention_mask is not None:
-            attention_mask = attention_mask.cuda()
-        pixel_values = pixel_values.cuda()
-
+            attention_mask = attention_mask.to(device)
+        pixel_values = pixel_values.to(device)
         img_embeds = self.encode_image(pixel_values)
         text_embeds = self.encode_text(input_ids, attention_mask)
 
@@ -252,13 +253,14 @@ class PromptClassifier(nn.Module):
         '''take image pixel values (after transform) and prompt_inputs
         (a dict of {'class1':{'input_ids':...,'attention_mask':,...}), 'class2':...}
         '''
-        pixel_values = pixel_values.cuda()
+        device = next(self.parameters()).device
+        pixel_values = pixel_values.to(device)
         print(pixel_values.device)
         class_similarities = []
         class_names = []
         for cls_name, cls_text in prompt_inputs.items():
             inputs = {'pixel_values':pixel_values}
-            for k in cls_text.keys(): inputs[k] = cls_text[k].cuda()
+            for k in cls_text.keys(): inputs[k] = cls_text[k].to(device)
 
             with torch.no_grad():
                 # TODO:
@@ -320,14 +322,15 @@ class SuperviseClassifier(nn.Module):
         **kwargs,
         ):
         outputs = defaultdict()
-        pixel_values = pixel_values.cuda()
+        device = next(self.parameters()).device
+        pixel_values = pixel_values.to(device)
         # take embeddings before the projection head
         img_embeds = self.model(pixel_values, project=False)
         logits = self.fc(img_embeds)
         outputs['embedding'] = img_embeds
         outputs['logits'] = logits
         if labels is not None and return_loss:
-            labels = labels.cuda().float()
+            labels = labels.to(device).float()
             if len(labels.shape) == 1: labels = labels.view(-1,1)
             if self.mode == 'multiclass': labels = labels.flatten().long()
             loss = self.loss_fn(logits, labels)
@@ -404,12 +407,13 @@ class PromptTuningClassifier(nn.Module):
         '''take image pixel values (after transform) and prompt_inputs
         (a dict of {'class1':{'input_ids':...,'attention_mask':,...}), 'class2':...}
         '''
-        pixel_values = pixel_values.cuda()
+        device = next(self.parameters()).device
+        pixel_values = pixel_values.to(device)
         class_similarities = []
         class_names = []
         for cls_name, cls_text in prompt_inputs.items():
             inputs = {'pixel_values':pixel_values}
-            for k in cls_text.keys(): inputs[k] = cls_text[k].cuda()
+            for k in cls_text.keys(): inputs[k] = cls_text[k].to(device)
 
             # TODO:
             # take soft mask over class_prompts to reach the similarities to classes
@@ -432,7 +436,7 @@ class PromptTuningClassifier(nn.Module):
         }
 
         if labels is not None and return_loss:
-            labels = labels.cuda().float()
+            labels = labels.to(device).float()
             if len(labels.shape) == 1: labels = labels.view(-1,1)
             if self.mode in ['multiclass', 'binary']: labels = labels.flatten().long()
             loss = self.loss_fn(class_similarities, labels)
