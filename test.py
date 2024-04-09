@@ -36,9 +36,8 @@ import time
 
 # 定义一个函数，所有进程都会执行这个函数
 def worker(num):
-    """线程执行的工作函数"""
-    print(f'Worker: {num}, PID: {multiprocessing.current_process().pid}')
-    time.sleep(2)
+    for i in range(10):
+        print(f'PID: {num} cnt: {i}')
 
 def main():
     # 创建进程池

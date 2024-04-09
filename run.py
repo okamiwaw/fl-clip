@@ -112,7 +112,7 @@ class Runner:
                                 select_dict=server.select_model.state_dict(),
                                 select_label=clients_label[client_id]
                                 )
-                # client.validate()
+                client.validate()
                 t2 = threading.Thread(target=client.person_train())
                 t1 = threading.Thread(target=client.local_train())
                 t1.start()
