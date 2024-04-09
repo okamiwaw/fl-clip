@@ -49,13 +49,12 @@ class Client:
         self.local_model.load_state_dict(copy.deepcopy(local_dict))
         self.person_model.load_state_dict(copy.deepcopy(person_dict))
         self.select_model.load_state_dict(copy.deepcopy(select_dict))
-    def log_metric(self, client, task, acc):
-        log_file = self.log_file
-        with open(log_file, 'a') as f:
-            f.write(f'Round: {self.round}, {client}-{task} :ACC: {acc:.4f}\n')
+    # def log_metric(self, client, task, acc):
+    #     log_file = self.log_file
+    #     with open(log_file, 'a') as f:
+    #         f.write(f'Round: {self.round}, {client}-{task} :ACC: {acc:.4f}\n')
     def local_train(self):
         print("local model training starts")
-        writer = self.writer
         loss_model = ImageTextContrastiveLoss(self.local_model).to("cuda:0")
         param_optimizer = list(loss_model.named_parameters())
         no_decay = ['bias', 'LayerNorm.bias', 'LayerNorm.weight']
@@ -72,7 +71,6 @@ class Client:
             with autocast():
                 loss_return = loss_model(**batch_data)
                 loss = loss_return['loss_value']
-            writer.add_scalar(f'{self.client_id}-local', loss.item(), self.round * len(self.train_loader) + i)
             scale_before_step = scaler.get_scale()
             scaler.scale(loss).backward()
             scaler.unscale_(optimizer)
@@ -83,7 +81,6 @@ class Client:
 
     def person_train(self):
         print("personal model training starts")
-        writer = self.writer
         loss_model = ImageTextContrastiveLoss(self.person_model).to("cuda:1")
         param_optimizer = list(loss_model.named_parameters())
         no_decay = ['bias', 'LayerNorm.bias', 'LayerNorm.weight']
@@ -100,7 +97,6 @@ class Client:
             with autocast():
                 loss_return = loss_model(**batch_data)
                 loss = loss_return['loss_value']
-            writer.add_scalar(f'{self.client_id}-person', loss.item(), self.round * len(self.train_loader) + i)
             scale_before_step = scaler.get_scale()
             scaler.scale(loss).backward()
             scaler.unscale_(optimizer)
@@ -112,7 +108,6 @@ class Client:
 
     def select_train(self):
         select_label = self.select_label
-        writer = self.writer
         print("select model training starts")
         criterion = torch.nn.CrossEntropyLoss()
         optimizer = optim.Adam(self.select_model.parameters(), lr=self.select_lr)
@@ -126,7 +121,6 @@ class Client:
                 labels = torch.tensor(labels).to("cuda:0")
                 outputs = self.select_model(inputs)
                 loss = criterion(outputs, labels)
-            writer.add_scalar(f'{self.client_id}-select', loss.item(), self.round * len(self.train_loader) + i)
             scaler.scale(loss).backward()
             scaler.step(optimizer)
             scaler.update()
