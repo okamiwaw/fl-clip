@@ -93,7 +93,7 @@ class Runner:
             for client_id in self.client_ids:
                 server.save_model()
                 print(f"{client_id} is starting training!")
-                deviceA = "cuda:0"
+                deviceA = "cuda:1"
                 deviceB = "cuda:1"
                 log_file = constants.LOGFILE
                 train_dataloader = get_train_dataloader(client_id)
