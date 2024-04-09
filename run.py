@@ -111,7 +111,12 @@ class Runner:
                                 select_label=clients_label[client_id]
                                 )
                 client.validate()
-                client.person_train()
+                t1 = threading.Thread(target=client.person_train())
+                t2 = threading.Thread(target=client.local_train())
+                t1.start()
+                t2.start()
+                t1.join()
+                t2.join()
                 client.local_train()
                 client.select_train()
                 diff_local = client.compute_diff(server.global_model, "global")

@@ -255,7 +255,6 @@ class PromptClassifier(nn.Module):
         '''
         device = next(self.parameters()).device
         pixel_values = pixel_values.to(device)
-        print(pixel_values.device)
         class_similarities = []
         class_names = []
         for cls_name, cls_text in prompt_inputs.items():
