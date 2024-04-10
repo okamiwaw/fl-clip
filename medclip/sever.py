@@ -50,6 +50,8 @@ class Server:
         select_dict = self.select_model.state_dict()
         dicts = [global_dict, select_dict]
         for idx, model_dict in enumerate(weights.values()):
+            if idx == 2:
+                continue
             for key in model_dict.keys():
                 if model_dict[key].dtype == torch.float32:
                     dicts[idx][key] += model_dict[key] * self.client_weights[idx]
