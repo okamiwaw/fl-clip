@@ -3,6 +3,8 @@ import os
 
 import torch
 
+from medclip import constants
+
 
 class Server:
     def __init__(self,
@@ -21,6 +23,7 @@ class Server:
         self.person_models = {}
         for client_id in client_ids:
             self.person_models[client_id] = copy.deepcopy(global_model)
+        self.client_weights = constants.CLIENTS_WEIGHT
 
     def receive(self, client_id, global_dict, select_dict, person_model):
         print(f"server receives {client_id}'s model file")
@@ -47,11 +50,9 @@ class Server:
         select_dict = self.select_model.state_dict()
         dicts = [global_dict, select_dict]
         for idx, model_dict in enumerate(weights.values()):
-            if idx == 2:
-                continue
             for key in model_dict.keys():
                 if model_dict[key].dtype == torch.float32:
-                    dicts[idx][key] += model_dict[key] / 4
+                    dicts[idx][key] += model_dict[key] * self.client_weights[idx]
         for client_id in self.client_ids:
             person_weight = weights["person_weights"][client_id].copy()
             for key in weights["person_weights"][client_id]:
