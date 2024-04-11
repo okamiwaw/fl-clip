@@ -31,7 +31,11 @@ class Server:
         dicts = [global_dict, select_dict]
         if not self.weights:
             for idx, name in enumerate(names):
-                self.weights[name] = copy.deepcopy(dicts[idx]) * self.client_weights[client_id]
+                self.weights[name] = copy.deepcopy(dicts[idx])
+                model_dict = self.weights[name]
+                for key in model_dict:
+                    if model_dict[key].dtype == torch.float32:
+                        model_dict[key] = model_dict[key] * self.client_weights[client_id]
             self.weights["person_weights"] = {}
             self.weights["person_weights"][client_id] = copy.deepcopy(person_model.state_dict())
         else:
