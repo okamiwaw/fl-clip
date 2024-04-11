@@ -1,4 +1,5 @@
 import copy
+import os
 
 import torch
 from torch import optim
@@ -49,6 +50,9 @@ class Client:
         self.select_model.load_state_dict(copy.deepcopy(select_dict))
     def log_metric(self, client, task, acc):
         log_file = self.log_file
+        folder_path = os.path.dirname(log_file)
+        if not os.path.exists(folder_path):
+            os.makedirs(folder_path)
         with open(log_file, 'a') as f:
             f.write(f'Round: {self.round}, {client}-{task} :ACC: {acc:.4f}\n')
     def local_train(self):
