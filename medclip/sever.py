@@ -31,7 +31,7 @@ class Server:
         dicts = [global_dict, select_dict]
         if not self.weights:
             for idx, name in enumerate(names):
-                self.weights[name] = copy.deepcopy(dicts[idx])
+                self.weights[name] = copy.deepcopy(dicts[idx]) * self.client_weights[client_id]
             self.weights["person_weights"] = {}
             self.weights["person_weights"][client_id] = copy.deepcopy(person_model.state_dict())
         else:
@@ -39,7 +39,7 @@ class Server:
                 model_dict = dicts[idx]
                 for key in model_dict:
                     if model_dict[key].dtype == torch.float32:
-                        self.weights[name][key] += model_dict[key]
+                        self.weights[name][key] += model_dict[key] * self.client_weights[client_id]
             self.weights["person_weights"][client_id] = copy.deepcopy(person_model.state_dict())
 
     def aggregate(self):
@@ -54,7 +54,7 @@ class Server:
                 continue
             for key in model_dict.keys():
                 if model_dict[key].dtype == torch.float32:
-                    dicts[idx][key] += model_dict[key] * self.client_weights[idx]
+                    dicts[idx][key] += model_dict[key]
         for client_id in self.client_ids:
             person_weight = weights["person_weights"][client_id].copy()
             for key in weights["person_weights"][client_id]:
@@ -68,6 +68,7 @@ class Server:
                         person_weight[key] += weights["person_weights"][client][key] * (1 - self.soft_lambda) / (
                                 len(self.client_ids) - 1)
                 self.person_models[client_id].load_state_dict(person_weight)
+        self.weights = {}
 
     def save_model(self):
         save_dir = f'outputs/models/{self.current_round}'

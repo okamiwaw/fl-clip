@@ -47,10 +47,10 @@ class Client:
         self.local_model.load_state_dict(copy.deepcopy(local_dict))
         self.person_model.load_state_dict(copy.deepcopy(person_dict))
         self.select_model.load_state_dict(copy.deepcopy(select_dict))
-    # def log_metric(self, client, task, acc):
-    #     log_file = self.log_file
-    #     with open(log_file, 'a') as f:
-    #         f.write(f'Round: {self.round}, {client}-{task} :ACC: {acc:.4f}\n')
+    def log_metric(self, client, task, acc):
+        log_file = self.log_file
+        with open(log_file, 'a') as f:
+            f.write(f'Round: {self.round}, {client}-{task} :ACC: {acc:.4f}\n')
     def local_train(self):
         print("local model training starts")
         loss_model = ImageTextContrastiveLoss(self.local_model).to("cuda:0")
@@ -150,7 +150,7 @@ class Client:
         scores = evaluator.evaluate()
         metric = scores['acc']
         print(f"local model acc is {metric}")
-
+        self.log_metric(self.client_id, "local", metric)
         medclip_clf = PromptClassifier(self.person_model)
         evaluator = Evaluator(
             medclip_clf=medclip_clf,
@@ -160,6 +160,7 @@ class Client:
         scores = evaluator.evaluate()
         metric = scores['acc']
         print(f"personal model acc is {metric}")
+        self.log_metric(self.client_id, "person", metric)
         self.select_model.eval()
         with torch.no_grad():
             metric = 0
@@ -175,3 +176,4 @@ class Client:
                 metric += acc
             metric /= len(valid_loader)
             print(f"select model acc is {metric}")
+        self.log_metric(self.client_id, "select", metric)
