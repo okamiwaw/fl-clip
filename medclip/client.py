@@ -7,7 +7,7 @@ from torch.cuda.amp import GradScaler, autocast
 from tqdm import tqdm
 import numpy as np
 
-from medclip import MedCLIPModel, MedCLIPVisionModelViT, constants, PromptClassifier
+from medclip import MedCLIPModel, MedCLIPVisionModelViT, constants, PromptClassifier, MedCLIPProcessor
 from medclip.evaluator import Evaluator
 from medclip.losses import ImageTextContrastiveLoss
 from medclip.vgg import vgg11
@@ -141,6 +141,9 @@ class Client:
             for key in global_dict.keys():
                 diff_dict[key] = local_dict[key] - global_dict[key]
         return diff_dict
+    def evaluate(self, model, valid_loader):
+        medclip_clf = PromptClassifier(model)
+        processor = MedCLIPProcessor()
 
     def validate(self):
         valid_loader = self.valid_loader

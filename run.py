@@ -7,7 +7,7 @@ import torch
 from torch.utils.data import DataLoader
 from torchvision import transforms
 
-from medclip import constants, MedCLIPModel, MedCLIPVisionModelViT
+from medclip import constants, MedCLIPModel, MedCLIPVisionModelViT, PromptClassifier
 from medclip.client import Client
 from medclip.prompts import generate_chexpert_class_prompts
 from medclip.sever import Server
