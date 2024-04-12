@@ -58,14 +58,7 @@ class Client:
     def local_train(self):
         print("local model training starts")
         loss_model = ImageTextContrastiveLoss(self.local_model).to("cuda:0")
-        param_optimizer = list(loss_model.named_parameters())
-        no_decay = ['bias', 'LayerNorm.bias', 'LayerNorm.weight']
-        optimizer_grouped_parameters = [
-            {'params': [p for n, p in param_optimizer if not any(nd in n for nd in no_decay)],
-             'weight_decay': self.weight_decay},
-            {'params': [p for n, p in param_optimizer if any(nd in n for nd in no_decay)], 'weight_decay': 0.0}
-        ]
-        optimizer = optim.Adam(optimizer_grouped_parameters, lr=self.textvision_lr)
+        optimizer = optim.Adam(loss_model.parameters(), lr=self.textvision_lr)
         progress_bar = tqdm(enumerate(self.train_loader), total=len(self.train_loader), leave=True)
         scaler = GradScaler()
         for i, batch_data in progress_bar:
@@ -84,14 +77,7 @@ class Client:
     def person_train(self):
         print("personal model training starts")
         loss_model = ImageTextContrastiveLoss(self.person_model).to("cuda:1")
-        param_optimizer = list(loss_model.named_parameters())
-        no_decay = ['bias', 'LayerNorm.bias', 'LayerNorm.weight']
-        optimizer_grouped_parameters = [
-            {'params': [p for n, p in param_optimizer if not any(nd in n for nd in no_decay)],
-             'weight_decay': self.weight_decay},
-            {'params': [p for n, p in param_optimizer if any(nd in n for nd in no_decay)], 'weight_decay': 0.0}
-        ]
-        optimizer = optim.Adam(optimizer_grouped_parameters, lr=self.textvision_lr)
+        optimizer = optim.Adam(loss_model.parameters(), lr=self.textvision_lr)
         progress_bar = tqdm(enumerate(self.train_loader), total=len(self.train_loader), leave=True)
         scaler = GradScaler()
         for i, batch_data in progress_bar:
