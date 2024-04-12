@@ -117,6 +117,7 @@ class Runner:
                 p1.join()
                 p2.join()
                 client.select_train()
+                client.validate()
                 diff_local = client.compute_diff(server.global_model, "global")
                 diff_select = client.compute_diff(server.select_model, "select")
                 server.receive(client_id=client_id,
