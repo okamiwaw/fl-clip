@@ -78,19 +78,19 @@ class Evaluator:
                 # res = self.process_confusion_matrix(cnf_matrix)
                 # outputs.update(res)
 
-            res = classification_report(labels, pred_label, output_dict=True)
-            res = res['macro avg']
-            res.pop('support')
-            outputs.update(res)
+            # res = classification_report(labels, pred_label, output_dict=True)
+            # res = res['macro avg']
+            # res.pop('support')
+            # outputs.update(res)
 
         if self.mode == 'multiclass':
             pred_label = pred.argmax(1)
             acc = (pred_label == labels).mean()
             outputs['acc'] = acc
-            res = classification_report(labels, pred_label, output_dict=True)
-            res = res['macro avg']
-            res.pop('support')
-            outputs.update(res)
+            # res = classification_report(labels, pred_label, output_dict=True)
+            # res = res['macro avg']
+            # res.pop('support')
+            # outputs.update(res)
 
             # cnf_matrix = confusion_matrix(labels, pred_label)
             # res = self.process_confusion_matrix(cnf_matrix)

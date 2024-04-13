@@ -33,17 +33,25 @@ class Server:
             for idx, name in enumerate(names):
                 self.weights[name] = copy.deepcopy(dicts[idx])
                 model_dict = self.weights[name]
+                if name == "global_weights":
+                    weight = self.client_weights[client_id]
+                else:
+                    weight = 1 / len(self.client_ids)
                 for key in model_dict:
                     if model_dict[key].dtype == torch.float32:
-                        model_dict[key] = model_dict[key] * self.client_weights[client_id]
+                        model_dict[key] = model_dict[key] * weight
             self.weights["person_weights"] = {}
             self.weights["person_weights"][client_id] = copy.deepcopy(person_model.state_dict())
         else:
             for idx, name in enumerate(names):
                 model_dict = dicts[idx]
+                if name == "global_weights":
+                    weight = self.client_weights[client_id]
+                else:
+                    weight = 1 / len(self.client_ids)
                 for key in model_dict:
                     if model_dict[key].dtype == torch.float32:
-                        self.weights[name][key] += model_dict[key] * self.client_weights[client_id]
+                        self.weights[name][key] += model_dict[key] * weight
             self.weights["person_weights"][client_id] = copy.deepcopy(person_model.state_dict())
 
     def aggregate(self):
