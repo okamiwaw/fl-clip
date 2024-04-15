@@ -36,7 +36,7 @@ class Server:
                 if name == "global_weights":
                     weight = self.client_weights[client_id]
                 else:
-                    weight = 1 / len(self.client_ids)
+                    weight = 1 / 4
                 for key in model_dict:
                     if model_dict[key].dtype == torch.float32:
                         model_dict[key] = model_dict[key] * weight
@@ -48,7 +48,7 @@ class Server:
                 if name == "global_weights":
                     weight = self.client_weights[client_id]
                 else:
-                    weight = 1 / len(self.client_ids)
+                    weight = 1 / 4
                 for key in model_dict:
                     if model_dict[key].dtype == torch.float32:
                         self.weights[name][key] += model_dict[key] * weight
