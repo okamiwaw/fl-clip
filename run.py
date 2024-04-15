@@ -68,10 +68,10 @@ class Runner:
         self.clients = None
         self.server = None
         seed = 42
-        random.seed(seed)
-        np.random.seed(seed)
         torch.manual_seed(seed)
-        torch.cuda.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
+        np.random.seed(seed)
+        random.seed(seed)
         os.environ['PYTHONASHSEED'] = str(seed)
         os.environ['TOKENIZERS_PARALLELISM'] = 'false'
         mp.set_start_method('spawn')
