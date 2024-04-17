@@ -14,9 +14,12 @@ SEED = 42
 DATASET_PATH = "/home/ligong2/FL/fl-clip/data/data_set"
 DATALIST_PATH = "/home/ligong2/FL/fl-clip/data/data_list"
 CLIENT_IDS = ["client_1", "client_2", "client_3", "client_4"]
-ROUNDS = 100
+ROUNDS = 20
 CLIENTS_LABEL = {"client_1": [1, 0, 0, 0], "client_2": [0, 1, 0, 0], "client_3": [0, 0, 1, 0], "client_4": [0, 0, 0, 1]}
-CLIENTS_WEIGHT = {"client_1": 0.4, "client_2": 0.4, "client_3": 0.05, "client_4": 0.15}
+CLIENT_ACC = {"client_1":0, "client_2": 0, "client_3": 0, "client_4": 0}
+GLOBAL_ACC = 0
+SELECT_ACC = 0
+CLIENTS_WEIGHT = {"client_1": 1/4, "client_2": 1/4, "client_3": 1/4, "client_4": 1/4}
 LOGFILE = "./outputs/log/log.txt"
 CHEXPERT_TASKS = [
     "No Finding",

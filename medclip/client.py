@@ -127,9 +127,18 @@ class Client:
             for key in global_dict.keys():
                 diff_dict[key] = local_dict[key] - global_dict[key]
         return diff_dict
-    def evaluate(self, model, valid_loader):
-        medclip_clf = PromptClassifier(model)
-        processor = MedCLIPProcessor()
+    def save_best_model(self, model_type):
+        save_dir = f'outputs/models/best_model'
+        os.makedirs(save_dir, exist_ok=True)
+        if model_type == 'local':
+            global_path = os.path.join(save_dir, "global_model.pth")
+            torch.save(self.local_model.state_dict(), global_path)
+        if model_type == 'select':
+            select_path = os.path.join(save_dir, "select_model.pth")
+            torch.save(self.select_model.state_dict(), select_path)
+        if model_type == 'person':
+            model_path = os.path.join(save_dir, f"person_model_{self.client_id}.pth")
+            torch.save(self.person_model.state_dict(), model_path)
 
     def validate(self):
         valid_loader = self.valid_loader
@@ -142,6 +151,9 @@ class Client:
         )
         scores = evaluator.evaluate()
         metric = scores['acc']
+        if metric > constants.GLOBAL_ACC:
+            self.save_best_model('local')
+            constants.GLOBAL_ACC = metric
         print(f"local model acc is {metric}")
         self.log_metric(self.client_id, "local", metric)
         medclip_clf = PromptClassifier(self.person_model)
@@ -152,6 +164,9 @@ class Client:
         )
         scores = evaluator.evaluate()
         metric = scores['acc']
+        if metric > constants.CLIENT_ACC[self.client_id]:
+            self.save_best_model('person')
+            constants.CLIENT_ACC[self.client_id] = metric
         print(f"personal model acc is {metric}")
         self.log_metric(self.client_id, "person", metric)
         self.select_model.eval()

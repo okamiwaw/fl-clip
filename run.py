@@ -91,7 +91,8 @@ class Runner:
         for r in range(self.rounds):
             print(f"round {r} / {self.rounds} is beginning!")
             for client_id in self.client_ids:
-                server.save_model()
+                if r % 5 == 0:
+                    server.save_model()
                 print(f"{client_id} is starting training!")
                 log_file = constants.LOGFILE
                 train_dataloader = get_train_dataloader(client_id)
@@ -108,12 +109,12 @@ class Runner:
                                 select_label=clients_label[client_id]
                                 )
                 client.validate()
-                # p1 = mp.Process(target=client.person_train)
-                # p2 = mp.Process(target=client.local_train)
-                # p1.start()
-                # p2.start()
-                # p1.join()
-                # p2.join()
+                p1 = mp.Process(target=client.person_train)
+                p2 = mp.Process(target=client.local_train)
+                p1.start()
+                p2.start()
+                p1.join()
+                p2.join()
                 client.select_train()
                 client.validate()
                 diff_local = client.compute_diff(server.global_model, "global")
