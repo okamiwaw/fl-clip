@@ -162,7 +162,7 @@ class Client:
             eval_dataloader=valid_loader,
             mode='multiclass',
         )
-        scores = evaluator.evaluate()
+        scores = evaluator.evaluate() 
         metric = scores['acc']
         if metric > constants.CLIENT_ACC[self.client_id]:
             self.save_best_model('person')
