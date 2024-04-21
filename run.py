@@ -41,14 +41,15 @@ def get_train_dataloader(client_id):
     return train_dataloader
 
 
-def get_valid_dataloader(client_id):
+def get_valid_dataloader(client_id, data_type):
     dataset_path = constants.DATASET_PATH
     datalist_path = constants.DATALIST_PATH
     cls_prompts = generate_chexpert_class_prompts(n=10)
     val_data = ZeroShotImageDataset(class_names=constants.CHEXPERT_COMPETITION_TASKS,
                                     dataset_path=dataset_path,
                                     datalist_path=datalist_path,
-                                    client_id=client_id)
+                                    client_id=client_id,
+                                    data_type=data_type)
     val_collate_fn = ZeroShotImageCollator(cls_prompts=cls_prompts,
                                            mode='multiclass')
     val_dataloader = DataLoader(val_data,
@@ -96,11 +97,13 @@ class Runner:
                 print(f"{client_id} is starting training!")
                 log_file = constants.LOGFILE
                 train_dataloader = get_train_dataloader(client_id)
-                val_dataloader = get_valid_dataloader(client_id)
+                val_person = get_valid_dataloader(client_id,'person')
+                val_global = get_valid_dataloader(client_id,'global')
                 clients_label = constants.CLIENTS_LABEL
                 client = Client(client_id=client_id,
                                 train_dataloader=train_dataloader,
-                                val_dataloader=val_dataloader,
+                                val_person=val_person,
+                                val_global=val_global,
                                 round=r,
                                 log_file=log_file,
                                 local_dict=server.global_model.state_dict(),

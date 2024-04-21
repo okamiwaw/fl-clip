@@ -19,7 +19,8 @@ class Client:
     def __init__(self,
                  client_id=None,
                  train_dataloader=None,
-                 val_dataloader=None,
+                 val_person=None,
+                 val_global=None,
                  device='cpu',
                  round=0,
                  epochs=1,
@@ -36,7 +37,8 @@ class Client:
         self.log_file = log_file
         self.select_label = select_label
         self.train_loader = train_dataloader
-        self.valid_loader = val_dataloader
+        self.val_person = val_person
+        self.val_global = val_global
         self.local_model = MedCLIPModel(vision_cls=MedCLIPVisionModelViT).to("cuda:0")
         self.person_model = MedCLIPModel(vision_cls=MedCLIPVisionModelViT).to("cuda:1")
         self.select_model = vgg11(
@@ -141,12 +143,13 @@ class Client:
             torch.save(self.person_model.state_dict(), model_path)
 
     def validate(self):
-        valid_loader = self.valid_loader
+        valid_person = self.val_person
+        valid_global = self.val_global
         select_label = self.select_label
         medclip_clf = PromptClassifier(self.local_model)
         evaluator = Evaluator(
             medclip_clf=medclip_clf,
-            eval_dataloader=valid_loader,
+            eval_dataloader=valid_global,
             mode='multiclass',
         )
         scores = evaluator.evaluate()
@@ -159,7 +162,7 @@ class Client:
         medclip_clf = PromptClassifier(self.person_model)
         evaluator = Evaluator(
             medclip_clf=medclip_clf,
-            eval_dataloader=valid_loader,
+            eval_dataloader=valid_person,
             mode='multiclass',
         )
         scores = evaluator.evaluate() 
@@ -172,7 +175,7 @@ class Client:
         self.select_model.eval()
         with torch.no_grad():
             metric = 0
-            for i, batch_data in enumerate(valid_loader):
+            for i, batch_data in enumerate(valid_person):
                 # input and expected output
                 images = batch_data["pixel_values"].to("cuda:0")
                 # generate label vector: image batch_size, same label
@@ -182,6 +185,6 @@ class Client:
                 pred = outputs.argmax(1).cpu().numpy()
                 acc = (pred == labels).mean()
                 metric += acc
-            metric /= len(valid_loader)
+            metric /= len(valid_person)
             print(f"select model acc is {metric}")
         self.log_metric(self.client_id, "select", metric)

@@ -231,22 +231,35 @@
 # df['imgpath'] = 'PadChest/' + df['imgpath']
 # # 保存修改后的数据到新的CSV文件中
 # df.to_csv('modified_file.csv', index=False)
-import csv
+# import csv
+#
+# # 输入和输出文件路径
+# input_file = 'client_4_t.csv'  # 这里替换为你的输入文件路径
+# output_file = 'output.csv'  # 这里替换为你想要保存的输出文件路径
+#
+# # 读取原始CSV文件
+# with open(input_file, mode='r', newline='', encoding='utf-8') as infile:
+#     reader = csv.reader(infile)
+#     data = list(reader)
+#
+# # 添加ID列
+# for index, row in enumerate(data, start=1):
+#     row.insert(0, str(index))
+#
+# # 写入新的CSV文件
+# with open(output_file, mode='w', newline='', encoding='utf-8') as outfile:
+#     writer = csv.writer(outfile)
+#     writer.writerows(data)
+import pandas as pd
 
-# 输入和输出文件路径
-input_file = 'client_4_t.csv'  # 这里替换为你的输入文件路径
-output_file = 'output.csv'  # 这里替换为你想要保存的输出文件路径
+# 读取CSV文件
+df1 = pd.read_csv('1.csv')
+df2 = pd.read_csv('2.csv')
+df3 = pd.read_csv('3.csv')
+df4 = pd.read_csv('4.csv')
 
-# 读取原始CSV文件
-with open(input_file, mode='r', newline='', encoding='utf-8') as infile:
-    reader = csv.reader(infile)
-    data = list(reader)
+# 将三个DataFrame合并为一个
+combined_df = pd.concat([df1, df2, df3, df4], ignore_index=True)
 
-# 添加ID列
-for index, row in enumerate(data, start=1):
-    row.insert(0, str(index))
-
-# 写入新的CSV文件
-with open(output_file, mode='w', newline='', encoding='utf-8') as outfile:
-    writer = csv.writer(outfile)
-    writer.writerows(data)
+# 保存合并后的DataFrame到新的CSV文件
+combined_df.to_csv('valid.csv', index=False)

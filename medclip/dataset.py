@@ -382,7 +382,8 @@ class ZeroShotImageDataset(Dataset):
                  imgtransform=None,
                  dataset_path=None,
                  datalist_path=None,
-                 client_id=None
+                 client_id=None,
+                 data_type=None
                  ) -> None:
         '''
         args:
@@ -406,7 +407,10 @@ class ZeroShotImageDataset(Dataset):
         self.client_id = client_id
         # imgpath, subject_id, report, labels...(14 labels)
         df_list = []
-        filename = f'{self.datalist_path}/{self.client_id}_v.csv'
+        if data_type == 'global':
+            filename = f'{self.datalist_path}/global_valid.csv'
+        else:
+            filename = f'{self.datalist_path}/{self.client_id}_v.csv'
         print('load data from', filename)
         df = pd.read_csv(filename, index_col=0)
         df_list.append(df)
