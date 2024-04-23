@@ -263,3 +263,19 @@ combined_df = pd.concat([df1, df2, df3, df4], ignore_index=True)
 
 # 保存合并后的DataFrame到新的CSV文件
 combined_df.to_csv('valid.csv', index=False)
+# import pandas as pd
+# import numpy as np
+#
+# # 读取CSV文件
+# df = pd.read_csv('4.csv')
+#
+# # 确保你的数据行数足够抽取5000项
+# if len(df) < 5000:
+#     raise ValueError("数据项不足5000，无法抽取。")
+#
+# # 随机抽取5000项
+# random_indices = np.random.choice(df.index, size=5000, replace=False)
+# sampled_df = df.loc[random_indices]
+#
+# # 保存到新的CSV文件
+# sampled_df.to_csv('4.csv', index=False)
