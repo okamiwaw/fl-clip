@@ -99,7 +99,7 @@ def _vgg(arch: str, cfg: str, batch_norm: bool, pretrained: bool, progress: bool
     return model
 
 
-def vgg11(pretrained: bool = True, progress: bool = True, **kwargs: Any) -> VGG:
+def vgg11(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> VGG:
     r"""VGG 11-layer model (configuration "A") from
     `"Very Deep Convolutional Networks For Large-Scale Image Recognition" <https://arxiv.org/pdf/1409.1556.pdf>`_.
 
