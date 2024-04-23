@@ -411,7 +411,6 @@ class ZeroShotImageDataset(Dataset):
             filename = f'{self.datalist_path}/global_valid.csv'
         else:
             filename = f'{self.datalist_path}/{self.client_id}_v.csv'
-        print('load data from', filename)
         df = pd.read_csv(filename, index_col=0)
         df_list.append(df)
         self.df = pd.concat(df_list, axis=0).reset_index(drop=True)

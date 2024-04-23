@@ -107,7 +107,7 @@ class Client:
             optimizer.zero_grad()
             with autocast():
                 inputs = batch_data["pixel_values"].to("cuda:0")
-                labels = np.ones(inputs.size()[0]) * select_label
+                labels = np.ones(inputs.size()[0], dtype=np.int64) * select_label
                 labels = torch.tensor(labels).to("cuda:0")
                 outputs = self.select_model(inputs)
                 loss = criterion(outputs, labels)
