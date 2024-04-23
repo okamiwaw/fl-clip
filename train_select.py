@@ -91,6 +91,7 @@ class Runner:
         server = self.server
         for r in range(self.rounds):
             print(f"round {r} / {self.rounds} is beginning!")
+            val_global = get_valid_dataloader(client_id, 'global')
             for client_id in self.client_ids:
                 if r % 5 == 0:
                     server.save_model()
@@ -98,7 +99,6 @@ class Runner:
                 log_file = constants.LOGFILE
                 train_dataloader = get_train_dataloader(client_id)
                 val_person = get_valid_dataloader(client_id,'person')
-                val_global = get_valid_dataloader(client_id,'global')
                 clients_label = constants.CLIENTS_LABEL
                 client = Client(client_id=client_id,
                                 train_dataloader=train_dataloader,
@@ -112,6 +112,7 @@ class Runner:
                                 select_label=clients_label[client_id]
                                 )
                 client.select_train()
+                select_label = clients_label[client_id]
                 diff_local = client.compute_diff(server.global_model, "global")
                 diff_select = client.compute_diff(server.select_model, "select")
                 server.receive(client_id=client_id,
@@ -120,6 +121,7 @@ class Runner:
                                person_model=client.person_model
                                )
             server.aggregate()
+
 
 
 def main():
