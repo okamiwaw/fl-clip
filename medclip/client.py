@@ -40,7 +40,7 @@ class Client:
         self.val_person = val_person
         self.val_global = val_global
         self.local_model = MedCLIPModel(vision_cls=MedCLIPVisionModelViT).to("cuda:0")
-        self.person_model = MedCLIPModel(vision_cls=MedCLIPVisionModelViT).to("cuda:1")
+        self.person_model = MedCLIPModel(vision_cls=MedCLIPVisionModelViT).to("cuda:0")
         self.select_model = vgg11(
             num_classes=constants.SELECT_NUM
         ).to("cuda:0")
@@ -107,7 +107,7 @@ class Client:
             optimizer.zero_grad()
             with autocast():
                 inputs = batch_data["pixel_values"].to("cuda:0")
-                labels = np.ones(inputs.size()[0], dtype=np.int64) * select_label
+                labels = np.ones((inputs.shape[0], 1)) * select_label
                 labels = torch.tensor(labels).to("cuda:0")
                 outputs = self.select_model(inputs)
                 loss = criterion(outputs, labels)
