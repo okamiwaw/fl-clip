@@ -89,7 +89,7 @@ class Runner:
     def train(self):
         server = self.server
         for r in range(200):
-            print(f"round {r} / {self.rounds} is beginning!")
+            print(f"round {r} / 200 is beginning!")
             val_global = get_valid_dataloader('global')
             for client_id in self.client_ids:
                 print(f"{client_id} is starting training!")
@@ -136,10 +136,12 @@ class Runner:
                     metric += acc
                 metric /= len(val_global)
                 print(f"select model acc is {metric}")
-            save_dir = f'outputs/models/{r}'
-            os.makedirs(save_dir, exist_ok=True)
-            select_path = os.path.join(save_dir, "select_model.pth")
-            torch.save(server.select_model.state_dict(), select_path)
+            if metric > constants.SELECT_ACC:
+                constants.SELECT_ACC = metric
+                save_dir = f'outputs/models/best'
+                os.makedirs(save_dir, exist_ok=True)
+                select_path = os.path.join(save_dir, "select_model.pth")
+                torch.save(server.select_model.state_dict(), select_path)
 
 
 def main():
