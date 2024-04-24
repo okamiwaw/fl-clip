@@ -52,7 +52,7 @@ def get_valid_dataloader( data_type):
     val_collate_fn = ZeroShotImageCollator(cls_prompts=cls_prompts,
                                            mode='multiclass')
     val_dataloader = DataLoader(val_data,
-                                batch_size=1,
+                                batch_size=50,
                                 collate_fn=val_collate_fn,
                                 shuffle=False,
                                 pin_memory=True,
@@ -124,11 +124,11 @@ class Runner:
                 for i, batch_data in enumerate(val_global):
                     # input and expected output
                     images = batch_data["pixel_values"].to("cuda:0")
-                    client_id = batch_data["clients"][0]
+                    client_ids = batch_data["clients"]
                     label_mapping = [[1, 0, 0, 0],[0, 1, 0, 0], [0, 0, 1, 0],[0, 0, 0, 1]]
-                    select_label = label_mapping[client_id]
+                    select_labels = [label_mapping[client_id] for client_id in client_ids]
                     # generate label vector: image batch_size, same label
-                    labels = np.ones((images.shape[0], 1)) * select_label
+                    labels = np.ones((images.shape[0], 1)) * select_labels
                     outputs = select_model(images)
                     labels = labels.argmax(1)
                     pred = outputs.argmax(1).cpu().numpy()
