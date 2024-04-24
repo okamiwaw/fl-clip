@@ -48,7 +48,6 @@ def get_valid_dataloader(client_id, data_type):
     val_data = ZeroShotImageDataset(class_names=constants.CHEXPERT_COMPETITION_TASKS,
                                     dataset_path=dataset_path,
                                     datalist_path=datalist_path,
-                                    client_id=client_id,
                                     data_type=data_type)
     val_collate_fn = ZeroShotImageCollator(cls_prompts=cls_prompts,
                                            mode='multiclass')

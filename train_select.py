@@ -91,35 +91,34 @@ class Runner:
         for r in range(self.rounds):
             print(f"round {r} / {self.rounds} is beginning!")
             val_global = get_valid_dataloader('global')
-            # for client_id in self.client_ids:
-            #     if r % 5 == 0:
-            #         server.save_model()
-            #     print(f"{client_id} is starting training!")
-            #     log_file = constants.LOGFILE
-            #     train_dataloader = get_train_dataloader(client_id)
-            #     val_person = get_valid_dataloader(client_id)
-            #     clients_label = constants.CLIENTS_LABEL
-            #     client = Client(client_id=client_id,
-            #                     train_dataloader=train_dataloader,
-            #                     val_person=val_person,
-            #                     val_global=val_global,
-            #                     round=r,
-            #                     log_file=log_file,
-            #                     local_dict=server.global_model.state_dict(),
-            #                     person_dict=server.person_models[client_id].state_dict(),
-            #                     select_dict=server.select_model.state_dict(),
-            #                     select_label=clients_label[client_id]
-            #                     )
-            #     client.select_train()
-            #     diff_local = client.compute_diff(server.global_model, "global")
-            #     diff_select = client.compute_diff(server.select_model, "select")
-            #     server.receive(client_id=client_id,
-            #                    global_dict=diff_local,
-            #                    select_dict=diff_select,
-            #                    person_model=client.person_model
-            #                    )
-            # server.aggregate()
-
+            for client_id in self.client_ids:
+                if r % 5 == 0:
+                    server.save_model()
+                print(f"{client_id} is starting training!")
+                log_file = constants.LOGFILE
+                train_dataloader = get_train_dataloader(client_id)
+                val_person = get_valid_dataloader(client_id)
+                clients_label = constants.CLIENTS_LABEL
+                client = Client(client_id=client_id,
+                                train_dataloader=train_dataloader,
+                                val_person=val_person,
+                                val_global=val_global,
+                                round=r,
+                                log_file=log_file,
+                                local_dict=server.global_model.state_dict(),
+                                person_dict=server.person_models[client_id].state_dict(),
+                                select_dict=server.select_model.state_dict(),
+                                select_label=clients_label[client_id]
+                                )
+                client.select_train()
+                diff_local = client.compute_diff(server.global_model, "global")
+                diff_select = client.compute_diff(server.select_model, "select")
+                server.receive(client_id=client_id,
+                               global_dict=diff_local,
+                               select_dict=diff_select,
+                               person_model=client.person_model
+                               )
+            server.aggregate()
             select_model = server.select_model
             select_model.eval()
             with torch.no_grad():
