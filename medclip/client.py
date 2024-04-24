@@ -100,7 +100,7 @@ class Client:
         select_label = self.select_label
         print("select model training starts")
         criterion = torch.nn.CrossEntropyLoss()
-        optimizer = optim.Adam(self.select_model.parameters(), lr=self.select_lr)
+        optimizer = optim.AdamW(self.select_model.parameters(), lr=self.select_lr, weight_decay=self.weight_decay)
         progress_bar = tqdm(enumerate(self.train_loader), total=len(self.train_loader), leave=True)
         scaler = GradScaler()
         for i, batch_data in progress_bar:

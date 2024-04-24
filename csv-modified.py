@@ -279,3 +279,13 @@ combined_df.to_csv('valid.csv', index=False)
 #
 # # 保存到新的CSV文件
 # sampled_df.to_csv('4.csv', index=False)
+# import pandas as pd
+#
+# # 读取CSV文件
+# df = pd.read_csv('4.csv')  # 替换 'your_file.csv' 为你的文件名
+#
+# # 添加新列，所有值设为1
+# df['client'] = 3
+#
+# # 保存修改后的CSV文件
+# df.to_csv('4.csv', index=False)  # 可以修改文件名为你希望的新文件名

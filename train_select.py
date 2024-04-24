@@ -52,7 +52,7 @@ def get_valid_dataloader( data_type):
     val_collate_fn = ZeroShotImageCollator(cls_prompts=cls_prompts,
                                            mode='multiclass')
     val_dataloader = DataLoader(val_data,
-                                batch_size=50,
+                                batch_size=1,
                                 collate_fn=val_collate_fn,
                                 shuffle=False,
                                 pin_memory=True,
@@ -91,35 +91,58 @@ class Runner:
         for r in range(self.rounds):
             print(f"round {r} / {self.rounds} is beginning!")
             val_global = get_valid_dataloader('global')
-            for client_id in self.client_ids:
-                if r % 5 == 0:
-                    server.save_model()
-                print(f"{client_id} is starting training!")
-                log_file = constants.LOGFILE
-                train_dataloader = get_train_dataloader(client_id)
-                val_person = get_valid_dataloader(client_id)
-                clients_label = constants.CLIENTS_LABEL
-                client = Client(client_id=client_id,
-                                train_dataloader=train_dataloader,
-                                val_person=val_person,
-                                val_global=val_global,
-                                round=r,
-                                log_file=log_file,
-                                local_dict=server.global_model.state_dict(),
-                                person_dict=server.person_models[client_id].state_dict(),
-                                select_dict=server.select_model.state_dict(),
-                                select_label=clients_label[client_id]
-                                )
-                client.select_train()
-                diff_local = client.compute_diff(server.global_model, "global")
-                diff_select = client.compute_diff(server.select_model, "select")
-                server.receive(client_id=client_id,
-                               global_dict=diff_local,
-                               select_dict=diff_select,
-                               person_model=client.person_model
-                               )
-            server.aggregate()
+            # for client_id in self.client_ids:
+            #     if r % 5 == 0:
+            #         server.save_model()
+            #     print(f"{client_id} is starting training!")
+            #     log_file = constants.LOGFILE
+            #     train_dataloader = get_train_dataloader(client_id)
+            #     val_person = get_valid_dataloader(client_id)
+            #     clients_label = constants.CLIENTS_LABEL
+            #     client = Client(client_id=client_id,
+            #                     train_dataloader=train_dataloader,
+            #                     val_person=val_person,
+            #                     val_global=val_global,
+            #                     round=r,
+            #                     log_file=log_file,
+            #                     local_dict=server.global_model.state_dict(),
+            #                     person_dict=server.person_models[client_id].state_dict(),
+            #                     select_dict=server.select_model.state_dict(),
+            #                     select_label=clients_label[client_id]
+            #                     )
+            #     client.select_train()
+            #     diff_local = client.compute_diff(server.global_model, "global")
+            #     diff_select = client.compute_diff(server.select_model, "select")
+            #     server.receive(client_id=client_id,
+            #                    global_dict=diff_local,
+            #                    select_dict=diff_select,
+            #                    person_model=client.person_model
+            #                    )
+            # server.aggregate()
 
+            select_model = server.select_model
+            select_model.eval()
+            with torch.no_grad():
+                metric = 0
+                for i, batch_data in enumerate(val_global):
+                    # input and expected output
+                    images = batch_data["pixel_values"].to("cuda:0")
+                    client_id = batch_data["clients"][0]
+                    label_mapping = [[1, 0, 0, 0],[0, 1, 0, 0], [0, 0, 1, 0],[0, 0, 0, 1]]
+                    select_label = label_mapping[client_id]
+                    # generate label vector: image batch_size, same label
+                    labels = np.ones((images.shape[0], 1)) * select_label
+                    outputs = select_model(images)
+                    labels = labels.argmax(1)
+                    pred = outputs.argmax(1).cpu().numpy()
+                    acc = (pred == labels).mean()
+                    metric += acc
+                metric /= len(val_global)
+                print(f"select model acc is {metric}")
+            save_dir = f'outputs/models/{r}'
+            os.makedirs(save_dir, exist_ok=True)
+            select_path = os.path.join(save_dir, "select_model.pth")
+            torch.save(server.select_model.state_dict(), select_path)
 
 
 def main():
