@@ -88,12 +88,10 @@ class Runner:
 
     def train(self):
         server = self.server
-        for r in range(self.rounds):
+        for r in range(200):
             print(f"round {r} / {self.rounds} is beginning!")
             val_global = get_valid_dataloader('global')
             for client_id in self.client_ids:
-                if r % 5 == 0:
-                    server.save_model()
                 print(f"{client_id} is starting training!")
                 log_file = constants.LOGFILE
                 train_dataloader = get_train_dataloader(client_id)
@@ -119,7 +117,7 @@ class Runner:
                                person_model=client.person_model
                                )
             server.aggregate()
-            select_model = server.select_model
+            select_model = server.select_model.to("cuda:0")
             select_model.eval()
             with torch.no_grad():
                 metric = 0
