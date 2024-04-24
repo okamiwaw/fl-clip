@@ -118,7 +118,7 @@ class Client:
 
 
     def compute_diff(self, model, model_type):
-        global_dict = model.state_dict().to("cpu")
+        global_dict = model.state_dict()
         diff_dict = {}
         if model_type == "global":
             local_dict = self.local_model.to("cpu").state_dict()
