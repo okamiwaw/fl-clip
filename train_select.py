@@ -142,6 +142,7 @@ class Runner:
                 os.makedirs(save_dir, exist_ok=True)
                 select_path = os.path.join(save_dir, "select_model.pth")
                 torch.save(server.select_model.state_dict(), select_path)
+            select_model = server.select_model.to("cpu")
 
 
 def main():
