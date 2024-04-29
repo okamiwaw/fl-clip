@@ -113,8 +113,7 @@ class Runner:
                                 select_dict=server.select_model.state_dict(),
                                 select_label=clients_label[client_id]
                                 )
-                client.save_best_model("local")
-                client.save_best_model("person")
+                client.validate()
                 p1 = mp.Process(target=client.person_train)
                 p2 = mp.Process(target=client.local_train)
                 p1.start()

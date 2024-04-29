@@ -62,7 +62,7 @@ class Client:
     def local_train(self):
         print("local model training starts")
         loss_model = ImageTextContrastiveLoss(self.local_model).to("cuda:0")
-        optimizer = optim.AdamW(loss_model.parameters(), lr=self.textvision_lr, weight_decay=self.weight_decay)
+        optimizer = optim.Adam(loss_model.parameters(), lr=self.textvision_lr)
         progress_bar = tqdm(enumerate(self.train_loader), total=len(self.train_loader), leave=True)
         scaler = GradScaler()
         for i, batch_data in progress_bar:
@@ -81,7 +81,7 @@ class Client:
     def person_train(self):
         print("personal model training starts")
         loss_model = ImageTextContrastiveLoss(self.person_model).to("cuda:1")
-        optimizer = optim.AdamW(loss_model.parameters(), lr=self.textvision_lr, weight_decay=self.weight_decay)
+        optimizer = optim.Adam(loss_model.parameters(), lr=self.textvision_lr)
         progress_bar = tqdm(enumerate(self.train_loader), total=len(self.train_loader), leave=True)
         scaler = GradScaler()
         for i, batch_data in progress_bar:
@@ -174,19 +174,19 @@ class Client:
             constants.CLIENT_ACC[self.client_id] = metric
         print(f"personal model acc is {metric}")
         self.log_metric(self.client_id, "person", metric)
-        self.select_model.eval()
-        with torch.no_grad():
-            metric = 0
-            for i, batch_data in enumerate(valid_person):
-                # input and expected output
-                images = batch_data["pixel_values"].to("cuda:0")
-                # generate label vector: image batch_size, same label
-                labels = np.ones((images.shape[0], 1)) * select_label
-                outputs = self.select_model(images)
-                labels = labels.argmax(1)
-                pred = outputs.argmax(1).cpu().numpy()
-                acc = (pred == labels).mean()
-                metric += acc
-            metric /= len(valid_person)
-            print(f"select model acc is {metric}")
-        self.log_metric(self.client_id, "select", metric)
+        # self.select_model.eval()
+        # with torch.no_grad():
+        #     metric = 0
+        #     for i, batch_data in enumerate(valid_person):
+        #         # input and expected output
+        #         images = batch_data["pixel_values"].to("cuda:0")
+        #         # generate label vector: image batch_size, same label
+        #         labels = np.ones((images.shape[0], 1)) * select_label
+        #         outputs = self.select_model(images)
+        #         labels = labels.argmax(1)
+        #         pred = outputs.argmax(1).cpu().numpy()
+        #         acc = (pred == labels).mean()
+        #         metric += acc
+        #     metric /= len(valid_person)
+        #     print(f"select model acc is {metric}")
+        # self.log_metric(self.client_id, "select", metric)
