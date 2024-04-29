@@ -83,6 +83,8 @@ class Runner:
         select_model = vgg11(
             num_classes=constants.SELECT_NUM
         )
+        state_dict = torch.load('./outputs/models/best/select_model.pth')
+        select_model.load_state_dict(state_dict)
         log_file = constants.LOGFILE
         self.server = Server(global_model=global_model,
                              select_model=select_model,
@@ -111,6 +113,8 @@ class Runner:
                                 select_dict=server.select_model.state_dict(),
                                 select_label=clients_label[client_id]
                                 )
+                client.save_best_model("local")
+                client.save_best_model("person")
                 p1 = mp.Process(target=client.person_train)
                 p2 = mp.Process(target=client.local_train)
                 p1.start()
