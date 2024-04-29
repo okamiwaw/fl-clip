@@ -1,5 +1,4 @@
 import os
-import threading
 import torch.multiprocessing as mp
 import random
 import numpy as np
@@ -41,7 +40,7 @@ def get_train_dataloader(client_id):
     return train_dataloader
 
 
-def get_valid_dataloader(client_id, data_type):
+def get_valid_dataloader(data_type):
     dataset_path = constants.DATASET_PATH
     datalist_path = constants.DATALIST_PATH
     cls_prompts = generate_chexpert_class_prompts(n=10)
@@ -52,7 +51,7 @@ def get_valid_dataloader(client_id, data_type):
     val_collate_fn = ZeroShotImageCollator(cls_prompts=cls_prompts,
                                            mode='multiclass')
     val_dataloader = DataLoader(val_data,
-                                batch_size=50,
+                                batch_size=1,
                                 collate_fn=val_collate_fn,
                                 shuffle=False,
                                 pin_memory=True,
@@ -84,20 +83,22 @@ class Runner:
         select_model = vgg11(
             num_classes=constants.SELECT_NUM
         )
-        self.server = Server(global_model=global_model, select_model=select_model, client_ids=self.client_ids)
+        log_file = constants.LOGFILE
+        self.server = Server(global_model=global_model,
+                             select_model=select_model,
+                             client_ids=self.client_ids,
+                             log_file=log_file)
 
     def train(self):
         server = self.server
         for r in range(self.rounds):
             print(f"round {r} / {self.rounds} is beginning!")
             for client_id in self.client_ids:
-                if r % 5 == 0:
-                    server.save_model()
                 print(f"{client_id} is starting training!")
                 log_file = constants.LOGFILE
                 train_dataloader = get_train_dataloader(client_id)
-                val_person = get_valid_dataloader(client_id,'person')
-                val_global = get_valid_dataloader(client_id,'global')
+                val_person = get_valid_dataloader(client_id)
+                val_global = get_valid_dataloader('global')
                 clients_label = constants.CLIENTS_LABEL
                 client = Client(client_id=client_id,
                                 train_dataloader=train_dataloader,
@@ -110,23 +111,20 @@ class Runner:
                                 select_dict=server.select_model.state_dict(),
                                 select_label=clients_label[client_id]
                                 )
-                # client.validate()
-                # p1 = mp.Process(target=client.person_train)
-                # p2 = mp.Process(target=client.local_train)
-                # p1.start()
-                # p2.start()
-                # p1.join()
-                # p2.join()
-                client.select_train()
-                client.validate()
+                p1 = mp.Process(target=client.person_train)
+                p2 = mp.Process(target=client.local_train)
+                p1.start()
+                p2.start()
+                p1.join()
+                p2.join()
                 diff_local = client.compute_diff(server.global_model, "global")
-                diff_select = client.compute_diff(server.select_model, "select")
                 server.receive(client_id=client_id,
                                global_dict=diff_local,
-                               select_dict=diff_select,
                                person_model=client.person_model
                                )
+            val_global = get_valid_dataloader('global')
             server.aggregate()
+            server.validate(val_global)
 
 
 def main():

@@ -250,19 +250,7 @@
 # with open(output_file, mode='w', newline='', encoding='utf-8') as outfile:
 #     writer = csv.writer(outfile)
 #     writer.writerows(data)
-import pandas as pd
 
-# 读取CSV文件
-df1 = pd.read_csv('1.csv')
-df2 = pd.read_csv('2.csv')
-df3 = pd.read_csv('3.csv')
-df4 = pd.read_csv('4.csv')
-
-# 将三个DataFrame合并为一个
-combined_df = pd.concat([df1, df2, df3, df4], ignore_index=True)
-
-# 保存合并后的DataFrame到新的CSV文件
-combined_df.to_csv('valid.csv', index=False)
 # import pandas as pd
 # import numpy as np
 #
@@ -289,3 +277,15 @@ combined_df.to_csv('valid.csv', index=False)
 #
 # # 保存修改后的CSV文件
 # df.to_csv('4.csv', index=False)  # 可以修改文件名为你希望的新文件名
+import pandas as pd
+
+# 载入CSV文件
+df = pd.read_csv('global_valid.csv')  # 替换 'your_file.csv' 为你的文件路径
+
+# 随机选择500个项
+sampled_df = df.sample(n=500)
+
+# 保存抽取的数据到新的CSV文件
+sampled_df.to_csv('a.csv', index=False)  # 'index=False' 防止索引也被写入到文件中
+
+print("已成功抽取并保存500项数据到 'sampled_data.csv'")

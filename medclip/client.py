@@ -40,7 +40,7 @@ class Client:
         self.val_person = val_person
         self.val_global = val_global
         self.local_model = MedCLIPModel(vision_cls=MedCLIPVisionModelViT).to("cuda:0")
-        self.person_model = MedCLIPModel(vision_cls=MedCLIPVisionModelViT).to("cuda:0")
+        self.person_model = MedCLIPModel(vision_cls=MedCLIPVisionModelViT).to("cuda:1")
         self.select_model = vgg11(
             num_classes=constants.SELECT_NUM
         ).to("cuda:0")
@@ -50,6 +50,7 @@ class Client:
         self.local_model.load_state_dict(copy.deepcopy(local_dict))
         self.person_model.load_state_dict(copy.deepcopy(person_dict))
         self.select_model.load_state_dict(copy.deepcopy(select_dict))
+
     def log_metric(self, client, task, acc):
         log_file = self.log_file
         folder_path = os.path.dirname(log_file)
@@ -57,6 +58,7 @@ class Client:
             os.makedirs(folder_path)
         with open(log_file, 'a') as f:
             f.write(f'Round: {self.round}, {client}-{task} :ACC: {acc:.4f}\n')
+
     def local_train(self):
         print("local model training starts")
         loss_model = ImageTextContrastiveLoss(self.local_model).to("cuda:0")

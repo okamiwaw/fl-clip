@@ -3,8 +3,8 @@ import os
 
 import torch
 
-from medclip import constants
-
+from medclip import constants, PromptClassifier
+import numpy as np
 
 class Server:
     def __init__(self,
@@ -12,7 +12,8 @@ class Server:
                  select_model=None,
                  current_round=0,
                  client_ids=None,
-                 soft_lambda=0.7
+                 soft_lambda=0.7,
+                 log_file=None,
                  ):
         self.global_model = global_model
         self.select_model = select_model
@@ -24,11 +25,20 @@ class Server:
         for client_id in client_ids:
             self.person_models[client_id] = copy.deepcopy(global_model)
         self.client_weights = constants.CLIENTS_WEIGHT
+        self.log_file = log_file
 
-    def receive(self, client_id, global_dict, select_dict, person_model):
+    def log_metric(self, task, acc):
+        log_file = self.log_file
+        folder_path = os.path.dirname(log_file)
+        if not os.path.exists(folder_path):
+            os.makedirs(folder_path)
+        with open(log_file, 'a') as f:
+            f.write(f'Round: { self.current_round},{task} :ACC: {acc:.4f}\n')
+
+    def receive(self, client_id, global_dict, person_model):
         print(f"server receives {client_id}'s model file")
-        names = ["global_weights", "select_weights"]
-        dicts = [global_dict, select_dict]
+        names = ["global_weights"]
+        dicts = [global_dict]
         if not self.weights:
             for idx, name in enumerate(names):
                 self.weights[name] = copy.deepcopy(dicts[idx])
@@ -59,8 +69,7 @@ class Server:
         self.current_round += 1
         weights = self.weights
         global_dict = self.global_model.state_dict()
-        select_dict = self.select_model.state_dict()
-        dicts = [global_dict, select_dict]
+        dicts = [global_dict]
         for idx, model_dict in enumerate(weights.values()):
             if idx == 2:
                 continue
@@ -82,7 +91,56 @@ class Server:
                 self.person_models[client_id].load_state_dict(person_weight)
         self.weights = {}
 
-    def save_model(self):
+    def validate(self, val_global):
+        select_model = self.select_model.to("cuda:0")
+        client_ids = self.client_ids
+        person_models = self.person_models
+        for client_id in client_ids:
+            person_models[client_id].to("cuda:0")
+        global_model = self.global_model.to("cuda:0")
+        pred_list = []
+        label_list = []
+        for i, batch_data in enumerate(val_global):
+            image = batch_data["pixel_values"].to("cuda:0")
+            outputs = self.select_model(image)
+            max_index = np.argmax(outputs.cpu().detach().numpy())
+            person_model = person_models[client_ids[max_index]]
+            medclip_clf = PromptClassifier(person_model)
+            medclip_clf.eval()
+            outputs = medclip_clf(**batch_data)
+            pred = outputs['logits']
+            pred_list.append(pred)
+            label_list.append(batch_data['labels'])
+        pred_list = torch.cat(pred_list, 0)
+        labels = torch.cat(label_list).cpu().detach().numpy()
+        pred = pred_list.cpu().detach().numpy()
+        pred_label = pred.argmax(1)
+        acc = (pred_label == labels).mean()
+        print(acc)
+        self.log_metric( "person_model", acc)
+        pred_list = []
+        label_list = []
+        for i, batch_data in enumerate(val_global):
+            image = batch_data["pixel_values"].to("cuda:0")
+            outputs = self.select_model(image)
+            max_index = np.argmax(outputs.cpu().detach().numpy())
+            medclip_clf = PromptClassifier(global_model)
+            medclip_clf.eval()
+            outputs = medclip_clf(**batch_data)
+            pred = outputs['logits']
+            pred_list.append(pred)
+            label_list.append(batch_data['labels'])
+        pred_list = torch.cat(pred_list, 0)
+        labels = torch.cat(label_list).cpu().detach().numpy()
+        pred = pred_list.cpu().detach().numpy()
+        pred_label = pred.argmax(1)
+        acc = (pred_label == labels).mean()
+        self.log_metric("global_model", acc)
+        print(acc)
+
+
+
+def save_model(self):
         save_dir = f'outputs/models/{self.current_round}'
         os.makedirs(save_dir, exist_ok=True)
         global_path = os.path.join(save_dir, "global_model.pth")
