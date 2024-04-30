@@ -71,7 +71,7 @@ class Server:
         global_dict = self.global_model.state_dict()
         dicts = [global_dict]
         for idx, model_dict in enumerate(weights.values()):
-            if idx == 2:
+            if idx == 1:
                 continue
             for key in model_dict.keys():
                 if model_dict[key].dtype == torch.float32:

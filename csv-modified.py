@@ -270,22 +270,20 @@
 # import pandas as pd
 #
 # # 读取CSV文件
-# df = pd.read_csv('4.csv')  # 替换 'your_file.csv' 为你的文件名
+# df = pd.read_csv('client_4_v.csv')  # 替换 'your_file.csv' 为你的文件名
 #
 # # 添加新列，所有值设为1
 # df['client'] = 3
 #
 # # 保存修改后的CSV文件
-# df.to_csv('4.csv', index=False)  # 可以修改文件名为你希望的新文件名
+# df.to_csv('client_4_v.csv', index=False)  # 可以修改文件名为你希望的新文件名
 import pandas as pd
 
-# 载入CSV文件
-df = pd.read_csv('global_valid.csv')  # 替换 'your_file.csv' 为你的文件路径
+# 列出所有文件名
+filenames = ['client_1_v.csv', 'client_2_v.csv', 'client_3_v.csv', 'client_4_v.csv']
 
-# 随机选择500个项
-sampled_df = df.sample(n=500)
+# 使用pandas读取所有文件并合并
+combined_csv = pd.concat([pd.read_csv(f) for f in filenames])
 
-# 保存抽取的数据到新的CSV文件
-sampled_df.to_csv('a.csv', index=False)  # 'index=False' 防止索引也被写入到文件中
-
-print("已成功抽取并保存500项数据到 'sampled_data.csv'")
+# 保存合并后的文件到新的CSV文件
+combined_csv.to_csv("global_valid.csv", index=False)
