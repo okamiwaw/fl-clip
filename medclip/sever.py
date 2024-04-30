@@ -137,6 +137,9 @@ class Server:
         acc = (pred_label == labels).mean()
         self.log_metric("global_model", acc)
         print(acc)
+        global_model.to("cpu")
+        for client_id in client_ids:
+            person_models[client_id].to("cpu")
 
 
 
