@@ -113,13 +113,13 @@ class Runner:
                                 select_dict=server.select_model.state_dict(),
                                 select_label=clients_label[client_id]
                                 )
-                # client.validate()
-                # p1 = mp.Process(target=client.person_train)
-                # p2 = mp.Process(target=client.local_train)
-                # p1.start()
-                # p2.start()
-                # p1.join()
-                # p2.join()
+                client.validate()
+                p1 = mp.Process(target=client.person_train)
+                p2 = mp.Process(target=client.local_train)
+                p1.start()
+                p2.start()
+                p1.join()
+                p2.join()
                 diff_local = client.compute_diff(server.global_model, "global")
                 server.receive(client_id=client_id,
                                global_dict=diff_local,
