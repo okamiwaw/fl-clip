@@ -73,6 +73,7 @@ class Runner:
         random.seed(seed)
         os.environ['PYTHONASHSEED'] = str(seed)
         os.environ['TOKENIZERS_PARALLELISM'] = 'false'
+
         mp.set_start_method('spawn')
 
 

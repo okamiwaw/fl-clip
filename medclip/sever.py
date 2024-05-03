@@ -92,6 +92,7 @@ class Server:
         self.weights = {}
 
     def validate(self, val_global):
+        thd = constants.THRESHOLD
         select_model = self.select_model.to("cuda:0")
         client_ids = self.client_ids
         person_models = self.person_models
@@ -105,6 +106,8 @@ class Server:
             outputs = self.select_model(image)
             max_index = np.argmax(outputs.cpu().detach().numpy())
             person_model = person_models[client_ids[max_index]]
+            if outputs <= thd:
+                person_model = global_model
             medclip_clf = PromptClassifier(person_model)
             medclip_clf.eval()
             outputs = medclip_clf(**batch_data)
