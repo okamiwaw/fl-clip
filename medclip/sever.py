@@ -106,7 +106,7 @@ class Server:
             outputs = self.select_model(image).cpu().detach().numpy()
             max_index = np.argmax(outputs)
             person_model = person_models[client_ids[max_index]]
-            if outputs[max_index] <= thd:
+            if np.max(outputs) <= thd:
                 person_model = global_model
             medclip_clf = PromptClassifier(person_model)
             medclip_clf.eval()
