@@ -103,10 +103,10 @@ class Server:
         label_list = []
         for i, batch_data in enumerate(val_global):
             image = batch_data["pixel_values"].to("cuda:0")
-            outputs = self.select_model(image)
-            max_index = np.argmax(outputs.cpu().detach().numpy())
+            outputs = self.select_model(image).cpu().detach().numpy()
+            max_index = np.argmax(outputs)
             person_model = person_models[client_ids[max_index]]
-            if outputs <= thd:
+            if outputs[max_index] <= thd:
                 person_model = global_model
             medclip_clf = PromptClassifier(person_model)
             medclip_clf.eval()
