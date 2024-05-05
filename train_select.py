@@ -36,7 +36,7 @@ def get_train_dataloader(client_id):
                                   collate_fn=train_collate_fn,
                                   shuffle=True,
                                   pin_memory=True,
-                                  num_workers=0,
+                                  num_workers=8,
                                   )
     return train_dataloader
 
@@ -56,7 +56,7 @@ def get_valid_dataloader( data_type):
                                 collate_fn=val_collate_fn,
                                 shuffle=False,
                                 pin_memory=True,
-                                num_workers=0,
+                                num_workers=8,
                                 )
     return val_dataloader
 
@@ -118,7 +118,7 @@ class Runner:
                                 select_dict_text=server.select_model_text.state_dict(),
                                 select_label=clients_label[client_id]
                                 )
-                # client.select_train()
+                client.select_train()
                 diff_select_image = client.compute_diff(server.select_model_image, "select_image")
                 diff_select_text = client.compute_diff(server.select_model_text, "select_text")
                 server.receive(client_id=client_id,
