@@ -106,10 +106,9 @@ def generate_rsna_class_prompts(n = None):
 
 def process_class_prompts(cls_prompts):
     tokenizer = AutoTokenizer.from_pretrained(constants.BERT_TYPE)
-    tokenizer.model_max_length = 77
     cls_prompt_inputs = defaultdict()
     for k,v in cls_prompts.items():
-        text_inputs = tokenizer(v, truncation=True, padding=True, return_tensors='pt')
+        text_inputs = tokenizer(v, truncation=True, max_length=20, padding="max_length", return_tensors='pt')
         cls_prompt_inputs[k] = text_inputs
     return cls_prompt_inputs
 

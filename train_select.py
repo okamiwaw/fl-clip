@@ -44,7 +44,7 @@ def get_train_dataloader(client_id):
 def get_valid_dataloader( data_type):
     dataset_path = constants.DATASET_PATH
     datalist_path = constants.DATALIST_PATH
-    cls_prompts = generate_chexpert_class_prompts(n=10)
+    cls_prompts = generate_chexpert_class_prompts(n=5)
     val_data = ZeroShotImageDataset(class_names=constants.CHEXPERT_COMPETITION_TASKS,
                                     dataset_path=dataset_path,
                                     datalist_path=datalist_path,
@@ -151,8 +151,8 @@ class Runner:
                     input_ids = []
                     attention_mask = []
                     for idx in cls:
-                        input_ids.append(prompts[dicts[idx]]["input_ids"].to("cuda:0"))
-                        attention_mask.append(prompts[dicts[idx]]["attention_mask"].to("cuda:0"))
+                        input_ids.append(prompts[dicts[idx]]["input_ids"].flatten().to("cuda:0"))
+                        attention_mask.append(prompts[dicts[idx]]["attention_mask"].flatten().to("cuda:0"))
                     input_ids = [tensor.reshape(-1) for tensor in input_ids]
                     input_ids = torch.stack(input_ids)
                     attention_mask = [tensor.reshape(-1) for tensor in attention_mask]
@@ -174,13 +174,13 @@ class Runner:
                 save_dir = f'outputs/models/best'
                 os.makedirs(save_dir, exist_ok=True)
                 select_path = os.path.join(save_dir, "select_model_image.pth")
-                torch.save(server.select_model.state_dict(), select_path)
+                torch.save(server.select_model_image.state_dict(), select_path)
             if metric2 > select_text_acc:
                 select_text__acc = metric2
                 save_dir = f'outputs/models/best'
                 os.makedirs(save_dir, exist_ok=True)
                 select_path = os.path.join(save_dir, "select_model_text.pth")
-                torch.save(server.select_model.state_dict(), select_path)
+                torch.save(server.select_model_text.state_dict(), select_path)
             select_model_image.to("cpu")
             select_model_text.to("cpu")
 
