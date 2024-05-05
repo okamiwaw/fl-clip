@@ -99,12 +99,12 @@ class Runner:
         select_text_acc = 0
         for r in range(200):
             print(f"round {r} / 200 is beginning!")
-            val_global = get_valid_dataloader('global')
+            val_global = get_train_dataloader('global')
             for client_id in self.client_ids:
                 print(f"{client_id} is starting training!")
                 log_file = constants.LOGFILE
                 train_dataloader = get_train_dataloader(client_id)
-                val_person = get_valid_dataloader(client_id)
+                val_person = get_train_dataloader(client_id)
                 clients_label = constants.CLIENTS_LABEL
                 client = Client(client_id=client_id,
                                 train_dataloader=train_dataloader,
@@ -118,7 +118,7 @@ class Runner:
                                 select_dict_text=server.select_model_text.state_dict(),
                                 select_label=clients_label[client_id]
                                 )
-                client.select_train()
+                # client.select_train()
                 diff_select_image = client.compute_diff(server.select_model_image, "select_image")
                 diff_select_text = client.compute_diff(server.select_model_text, "select_text")
                 server.receive(client_id=client_id,
@@ -145,18 +145,8 @@ class Runner:
                     select_labels = [label_mapping[client_id] for client_id in client_ids]
                     labels = np.ones((images.shape[0], 1)) * select_labels
                     outputs_image = select_model_image(images)
-                    prompts = batch_data["prompt_inputs"]
-                    cls = batch_data["labels"].cpu().numpy()
-                    dicts =["Atelectasis", "Cardiomegaly", "Consolidation", "Edema", "Pleural Effusion"]
-                    input_ids = []
-                    attention_mask = []
-                    for idx in cls:
-                        input_ids.append(prompts[dicts[idx]]["input_ids"].flatten().to("cuda:0"))
-                        attention_mask.append(prompts[dicts[idx]]["attention_mask"].flatten().to("cuda:0"))
-                    input_ids = [tensor.reshape(-1) for tensor in input_ids]
-                    input_ids = torch.stack(input_ids)
-                    attention_mask = [tensor.reshape(-1) for tensor in attention_mask]
-                    attention_mask = torch.stack(attention_mask)
+                    input_ids = batch_data["input_ids"].to("cuda:0")
+                    attention_mask = batch_data["attention_mask"].to("cuda:0")
                     outputs_text = select_model_text(input_ids, attention_mask)
                     labels = labels.argmax(1)
                     pred1 = outputs_image.argmax(1).cpu().numpy()

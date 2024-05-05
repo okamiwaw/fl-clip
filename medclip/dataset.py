@@ -201,6 +201,7 @@ class ImageTextContrastiveDataset(Dataset):
         img = Image.open(self.dataset_path + '/' + row.imgpath)
         img = self._pad_img(img)  # pad image to square
         img = self.transform(img).unsqueeze(1)
+        client = row.client
         report = row.report  # original sentences list
         img_label = row[self._labels_].values  # image corresponds to text labels
         if len(report) == 0:  # no report available
@@ -220,7 +221,7 @@ class ImageTextContrastiveDataset(Dataset):
                 text_label = np.zeros(len(img_label))
                 text_label[0] = 1
             text_label = img_label.copy()
-        return img, report, img_label, text_label
+        return img, report, img_label, text_label, client
 
     def __len__(self):
         return len(self.df)
@@ -362,6 +363,7 @@ class ImageTextContrastiveCollator:
             report_list.append(data[1])
             inputs['img_labels'].append(data[2])
             inputs['text_labels'].append(data[3])
+            inputs['clients'].append(data[4])
         text_inputs = self.tokenizer(report_list, truncation=True, padding=True, return_tensors='pt')
         inputs['pixel_values'] = torch.cat(inputs['pixel_values'], 0)
         if inputs['pixel_values'].shape[1] == 1: inputs['pixel_values'] = inputs['pixel_values'].repeat((1, 3, 1, 1))
