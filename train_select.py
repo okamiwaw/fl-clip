@@ -13,8 +13,8 @@ from medclip.prompts import generate_chexpert_class_prompts
 from medclip.sever import Server
 from medclip.dataset import ImageTextContrastiveDataset, ImageTextContrastiveCollator, ZeroShotImageDataset, \
     ZeroShotImageCollator
-from medclip.vgg import vgg11
-
+from medclip.select_model import vgg11
+from medclip.select_model import Bert_Classifier
 
 def get_train_dataloader(client_id):
     dataset_path = constants.DATASET_PATH
@@ -36,7 +36,7 @@ def get_train_dataloader(client_id):
                                   collate_fn=train_collate_fn,
                                   shuffle=True,
                                   pin_memory=True,
-                                  num_workers=8,
+                                  num_workers=0,
                                   )
     return train_dataloader
 
@@ -56,7 +56,7 @@ def get_valid_dataloader( data_type):
                                 collate_fn=val_collate_fn,
                                 shuffle=False,
                                 pin_memory=True,
-                                num_workers=8,
+                                num_workers=0,
                                 )
     return val_dataloader
 
@@ -80,14 +80,23 @@ class Runner:
     def config(self):
         self.client_ids = constants.CLIENT_IDS
         self.rounds = constants.ROUNDS
+        client_nums = constants.SELECT_NUM
         global_model = MedCLIPModel(vision_cls=MedCLIPVisionModelViT)
-        select_model = vgg11(
-            num_classes=constants.SELECT_NUM
+        select_model_image = vgg11(
+            num_classes=client_nums
         )
-        self.server = Server(global_model=global_model, select_model=select_model, client_ids=self.client_ids)
+        select_model_text = Bert_Classifier(
+            num_classes=client_nums
+        )
+        self.server = Server(global_model=global_model,
+                             select_model_image=select_model_image,
+                             select_model_text=select_model_text,
+                             client_ids=self.client_ids)
 
     def train(self):
         server = self.server
+        select_image_acc = 0
+        select_text_acc = 0
         for r in range(200):
             print(f"round {r} / 200 is beginning!")
             val_global = get_valid_dataloader('global')
@@ -105,44 +114,75 @@ class Runner:
                                 log_file=log_file,
                                 local_dict=server.global_model.state_dict(),
                                 person_dict=server.person_models[client_id].state_dict(),
-                                select_dict=server.select_model.state_dict(),
+                                select_dict_image=server.select_model_image.state_dict(),
+                                select_dict_text=server.select_model_text.state_dict(),
                                 select_label=clients_label[client_id]
                                 )
-                client.select_train()
-                diff_local = client.compute_diff(server.global_model, "global")
-                diff_select = client.compute_diff(server.select_model, "select")
+                # client.select_train()
+                diff_select_image = client.compute_diff(server.select_model_image, "select_image")
+                diff_select_text = client.compute_diff(server.select_model_text, "select_text")
                 server.receive(client_id=client_id,
-                               global_dict=diff_local,
-                               select_dict=diff_select,
-                               person_model=client.person_model
+                               model=diff_select_image,
+                               model_type="select_image"
+                               )
+                server.receive(client_id=client_id,
+                               model=diff_select_text,
+                               model_type="select_text"
                                )
             server.aggregate()
-            select_model = server.select_model.to("cuda:0")
-            select_model.eval()
+            select_model_image = server.select_model_image.to("cuda:0")
+            select_model_text = server.select_model_text.to("cuda:0")
+            select_model_image.eval()
+            select_model_text.eval()
             with torch.no_grad():
-                metric = 0
+                metric1 = 0
+                metric2 = 0
                 for i, batch_data in enumerate(val_global):
                     # input and expected output
                     images = batch_data["pixel_values"].to("cuda:0")
                     client_ids = batch_data["clients"]
                     label_mapping = [[1, 0, 0, 0],[0, 1, 0, 0], [0, 0, 1, 0],[0, 0, 0, 1]]
                     select_labels = [label_mapping[client_id] for client_id in client_ids]
-                    # generate label vector: image batch_size, same label
                     labels = np.ones((images.shape[0], 1)) * select_labels
-                    outputs = select_model(images)
+                    outputs_image = select_model_image(images)
+                    prompts = batch_data["prompt_inputs"]
+                    cls = batch_data["labels"].cpu().numpy()
+                    dicts =["Atelectasis", "Cardiomegaly", "Consolidation", "Edema", "Pleural Effusion"]
+                    input_ids = []
+                    attention_mask = []
+                    for idx in cls:
+                        input_ids.append(prompts[dicts[idx]]["input_ids"].to("cuda:0"))
+                        attention_mask.append(prompts[dicts[idx]]["attention_mask"].to("cuda:0"))
+                    input_ids = [tensor.reshape(-1) for tensor in input_ids]
+                    input_ids = torch.stack(input_ids)
+                    attention_mask = [tensor.reshape(-1) for tensor in attention_mask]
+                    attention_mask = torch.stack(attention_mask)
+                    outputs_text = select_model_text(input_ids, attention_mask)
                     labels = labels.argmax(1)
-                    pred = outputs.argmax(1).cpu().numpy()
-                    acc = (pred == labels).mean()
-                    metric += acc
-                metric /= len(val_global)
-                print(f"select model acc is {metric}")
-            if metric > constants.SELECT_ACC:
-                constants.SELECT_ACC = metric
+                    pred1 = outputs_image.argmax(1).cpu().numpy()
+                    pred2 = outputs_text.argmax(1).cpu().numpy()
+                    acc1 = (pred1 == labels).mean()
+                    acc2 = (pred2 == labels).mean()
+                    metric1 += acc1
+                    metric2 += acc2
+                metric1 /= len(val_global)
+                metric2 /= len(val_global)
+                print(f"select model_image acc is {metric1}")
+                print(f"select model_text acc is {metric2}")
+            if metric1 > select_image_acc:
+                select_image_acc = metric1
                 save_dir = f'outputs/models/best'
                 os.makedirs(save_dir, exist_ok=True)
-                select_path = os.path.join(save_dir, "select_model.pth")
+                select_path = os.path.join(save_dir, "select_model_image.pth")
                 torch.save(server.select_model.state_dict(), select_path)
-            select_model = server.select_model.to("cpu")
+            if metric2 > select_text_acc:
+                select_text__acc = metric2
+                save_dir = f'outputs/models/best'
+                os.makedirs(save_dir, exist_ok=True)
+                select_path = os.path.join(save_dir, "select_model_text.pth")
+                torch.save(server.select_model.state_dict(), select_path)
+            select_model_image.to("cpu")
+            select_model_text.to("cpu")
 
 
 def main():

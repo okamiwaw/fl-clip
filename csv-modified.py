@@ -251,23 +251,23 @@
 #     writer = csv.writer(outfile)
 #     writer.writerows(data)
 
-# import pandas as pd
-# import numpy as np
-#
-# # 读取CSV文件
-# df = pd.read_csv('4.csv')
-#
-# # 确保你的数据行数足够抽取5000项
-# if len(df) < 5000:
-#     raise ValueError("数据项不足5000，无法抽取。")
-#
-# # 随机抽取5000项
-# random_indices = np.random.choice(df.index, size=5000, replace=False)
-# sampled_df = df.loc[random_indices]
-#
-# # 保存到新的CSV文件
-# sampled_df.to_csv('4.csv', index=False)
-# import pandas as pd
+import pandas as pd
+import numpy as np
+
+# 读取CSV文件
+df = pd.read_csv('client_4_t.csv')
+
+# 确保你的数据行数足够抽取5000项
+if len(df) < 6000:
+    raise ValueError("数据项不足6000，无法抽取。")
+
+# 随机抽取5000项
+random_indices = np.random.choice(df.index, size=5000, replace=False)
+sampled_df = df.loc[random_indices]
+
+# 保存到新的CSV文件
+sampled_df.to_csv('client_4_t.csv', index=False)
+import pandas as pd
 #
 # # 读取CSV文件
 # df = pd.read_csv('client_4_v.csv')  # 替换 'your_file.csv' 为你的文件名
@@ -277,13 +277,3 @@
 #
 # # 保存修改后的CSV文件
 # df.to_csv('client_4_v.csv', index=False)  # 可以修改文件名为你希望的新文件名
-import pandas as pd
-
-# 列出所有文件名
-filenames = ['client_1_v.csv', 'client_2_v.csv', 'client_3_v.csv', 'client_4_v.csv']
-
-# 使用pandas读取所有文件并合并
-combined_csv = pd.concat([pd.read_csv(f) for f in filenames])
-
-# 保存合并后的文件到新的CSV文件
-combined_csv.to_csv("global_valid.csv", index=False)

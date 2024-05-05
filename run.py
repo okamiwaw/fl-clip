@@ -12,7 +12,7 @@ from medclip.prompts import generate_chexpert_class_prompts
 from medclip.sever import Server
 from medclip.dataset import ImageTextContrastiveDataset, ImageTextContrastiveCollator, ZeroShotImageDataset, \
     ZeroShotImageCollator
-from medclip.vgg import vgg11
+from medclip.select_model import vgg11
 
 
 def get_train_dataloader(client_id):

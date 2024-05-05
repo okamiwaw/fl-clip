@@ -1,4 +1,4 @@
-BERT_TYPE = 'emilyalsentzer/Bio_ClinicalBERT'
+BERT_TYPE = './Bio_ClinicalBERT'
 VIT_TYPE = 'microsoft/swin-tiny-patch4-window7-224'
 
 IMG_SIZE = 224

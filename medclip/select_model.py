@@ -14,15 +14,19 @@
 
 
 from typing import Any, Dict, List, Union, cast
-
+from transformers import BertModel, BertTokenizer
+import torch.nn as nn
+import torch.optim as optim
 import torch
 import torch.nn as nn
 from torch.hub import load_state_dict_from_url
+from medclip import constants
 
 __all__ = [
     "VGG",
     "vgg11",
 ]
+
 
 
 model_urls = {
@@ -108,3 +112,27 @@ def vgg11(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> VGG
         progress (bool): If True, displays a progress bar of the download to stderr
     """
     return _vgg("vgg11", "A", False, pretrained, progress, **kwargs)
+
+
+
+# 加载预训练模型和分词器
+model_name = constants.BERT_TYPE
+tokenizer = BertTokenizer.from_pretrained(model_name)
+model = BertModel.from_pretrained(model_name)
+
+# 定义分类器
+class Bert_Classifier(nn.Module):
+    def __init__(self, num_classes):
+        super(Bert_Classifier, self).__init__()
+        self.bert = model
+        self.dropout = nn.Dropout(0.1)
+        self.fc = nn.Linear(self.bert.config.hidden_size, num_classes)
+        self.softmax = nn.Softmax(dim=1)
+
+    def forward(self, input_ids, attention_mask):
+        outputs = self.bert(input_ids=input_ids, attention_mask=attention_mask)
+        pooled_output = outputs.pooler_output
+        dropped = self.dropout(pooled_output)
+        logits = self.fc(dropped)
+        probabilities = self.softmax(logits)
+        return probabilities
