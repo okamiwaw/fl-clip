@@ -121,14 +121,17 @@ tokenizer = BertTokenizer.from_pretrained(model_name)
 model = BertModel.from_pretrained(model_name)
 
 # 定义分类器
-class Bert_Classifier(nn.Module):
+class BertConvClassifier(nn.Module):
     def __init__(self, num_classes):
-        super(Bert_Classifier, self).__init__()
-        self.bert = model
-        self.conv1 = nn.Conv1d(in_channels=self.bert.config.hidden_size, out_channels=128, kernel_size=5)
-        self.pool1 = nn.MaxPool1d(kernel_size=2)
-        self.conv2 = nn.Conv1d(in_channels=128, out_channels=64, kernel_size=5)
-        self.pool2 = nn.MaxPool1d(kernel_size=2)
+        super(BertConvClassifier, self).__init__()
+        self.bert = model  # 假设 model 是一个预加载的BERT模型
+
+        # 使用填充以确保卷积操作的有效性
+        self.conv1 = nn.Conv1d(in_channels=768, out_channels=128, kernel_size=5, padding=2)
+        self.pool1 = nn.MaxPool1d(kernel_size=2, stride=2)
+        self.conv2 = nn.Conv1d(in_channels=128, out_channels=64, kernel_size=5, padding=2)
+        self.pool2 = nn.MaxPool1d(kernel_size=2, stride=2)
+
         # 自适应池化层到一个固定大小的输出
         self.adaptive_pool = nn.AdaptiveMaxPool1d(output_size=1)
 
@@ -149,7 +152,7 @@ class Bert_Classifier(nn.Module):
         x = self.adaptive_pool(x)
 
         # 压平操作
-        x = x.view(x.size(0), -1)  # 将多维数据压平成二维
+        x = x.view(x.size(0), -1)
 
         # 进行分类
         logits = self.fc(x)
