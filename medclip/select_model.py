@@ -125,8 +125,9 @@ class Bert_Classifier(nn.Module):
     def __init__(self, num_classes):
         super(Bert_Classifier, self).__init__()
         self.bert = model
+        for param in self.bert.parameters():
+            param.requires_grad = False
         self.dropout = nn.Dropout(0.1)
-
         # Convolutional layer to process the sequence output of BERT
         # Assuming that the sequence length and number of filters are appropriately selected
         self.conv1d = nn.Conv1d(in_channels=self.bert.config.hidden_size,
