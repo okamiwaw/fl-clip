@@ -120,7 +120,7 @@ class Client:
             scaler.step(optimizer_image)
             scaler.update()
             progress_bar.set_postfix({"loss": loss.item()})
-        optimizer_text = optim.AdamW(self.select_model_text.parameters(), lr=self.select_lr,
+        optimizer_text = optim.AdamW(self.select_model_text.parameters(), lr=5e-5,
                                      weight_decay=self.weight_decay)
         progress_bar = tqdm(enumerate(self.train_loader), total=len(self.train_loader), leave=True)
         scaler = GradScaler()

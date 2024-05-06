@@ -44,7 +44,7 @@ def get_train_dataloader(client_id):
 def get_valid_dataloader( data_type):
     dataset_path = constants.DATASET_PATH
     datalist_path = constants.DATALIST_PATH
-    cls_prompts = generate_chexpert_class_prompts(n=5)
+    cls_prompts = generate_chexpert_class_prompts(n=10)
     val_data = ZeroShotImageDataset(class_names=constants.CHEXPERT_COMPETITION_TASKS,
                                     dataset_path=dataset_path,
                                     datalist_path=datalist_path,
