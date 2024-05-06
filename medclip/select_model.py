@@ -121,9 +121,9 @@ tokenizer = BertTokenizer.from_pretrained(model_name)
 model = BertModel.from_pretrained(model_name)
 
 # 定义分类器
-class BertConvClassifier(nn.Module):
+class Bert_Classifier(nn.Module):
     def __init__(self, num_classes):
-        super(BertConvClassifier, self).__init__()
+        super(Bert_Classifier, self).__init__()
         self.bert = model  # 假设 model 是一个预加载的BERT模型
 
         # 使用填充以确保卷积操作的有效性
