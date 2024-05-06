@@ -125,14 +125,33 @@ class Bert_Classifier(nn.Module):
     def __init__(self, num_classes):
         super(Bert_Classifier, self).__init__()
         self.bert = model
-        self.dropout = nn.Dropout(0.1)
-        self.fc = nn.Linear(self.bert.config.hidden_size, num_classes)
+        self.conv1 = nn.Conv1d(in_channels=self.bert.config.hidden_size, out_channels=128, kernel_size=5)
+        self.pool1 = nn.MaxPool1d(kernel_size=2)
+        self.conv2 = nn.Conv1d(in_channels=128, out_channels=64, kernel_size=5)
+        self.pool2 = nn.MaxPool1d(kernel_size=2)
+        # 自适应池化层到一个固定大小的输出
+        self.adaptive_pool = nn.AdaptiveMaxPool1d(output_size=1)
+
+        # 分类器
+        self.fc = nn.Linear(64, num_classes)
         self.softmax = nn.Softmax(dim=1)
 
     def forward(self, input_ids, attention_mask):
         outputs = self.bert(input_ids=input_ids, attention_mask=attention_mask)
         pooled_output = outputs.pooler_output
-        dropped = self.dropout(pooled_output)
-        logits = self.fc(dropped)
+        pooled_output = pooled_output.unsqueeze(2)  # 调整形状以适应卷积层 (batch_size, hidden_size, 1)
+
+        # 卷积和池化操作
+        x = self.conv1(pooled_output)
+        x = self.pool1(x)
+        x = self.conv2(x)
+        x = self.pool2(x)
+        x = self.adaptive_pool(x)
+
+        # 压平操作
+        x = x.view(x.size(0), -1)  # 将多维数据压平成二维
+
+        # 进行分类
+        logits = self.fc(x)
         probabilities = self.softmax(logits)
         return probabilities
