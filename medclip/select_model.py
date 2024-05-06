@@ -124,37 +124,41 @@ model = BertModel.from_pretrained(model_name)
 class Bert_Classifier(nn.Module):
     def __init__(self, num_classes):
         super(Bert_Classifier, self).__init__()
-        self.bert = model  # 假设 model 是一个预加载的BERT模型
+        self.bert = model
+        self.dropout = nn.Dropout(0.1)
 
-        # 使用填充以确保卷积操作的有效性
-        self.conv1 = nn.Conv1d(in_channels=768, out_channels=128, kernel_size=5, padding=2)
-        self.pool1 = nn.MaxPool1d(kernel_size=2, stride=2)
-        self.conv2 = nn.Conv1d(in_channels=128, out_channels=64, kernel_size=5, padding=2)
-        self.pool2 = nn.MaxPool1d(kernel_size=2, stride=2)
+        # Convolutional layer to process the sequence output of BERT
+        # Assuming that the sequence length and number of filters are appropriately selected
+        self.conv1d = nn.Conv1d(in_channels=self.bert.config.hidden_size,
+                                out_channels=128,  # Number of filters
+                                kernel_size=3,  # Size of the kernel
+                                padding=1)  # Padding to keep sequence length consistent
 
-        # 自适应池化层到一个固定大小的输出
-        self.adaptive_pool = nn.AdaptiveMaxPool1d(output_size=1)
+        # Adaptive max pooling to reduce dimensionality and focus on most significant features
+        self.pool = nn.AdaptiveMaxPool1d(1)
 
-        # 分类器
-        self.fc = nn.Linear(64, num_classes)
+        # Fully connected layer for classification
+        self.fc = nn.Linear(128, num_classes)
         self.softmax = nn.Softmax(dim=1)
 
     def forward(self, input_ids, attention_mask):
         outputs = self.bert(input_ids=input_ids, attention_mask=attention_mask)
-        pooled_output = outputs.pooler_output
-        pooled_output = pooled_output.unsqueeze(2)  # 调整形状以适应卷积层 (batch_size, hidden_size, 1)
 
-        # 卷积和池化操作
-        x = self.conv1(pooled_output)
-        x = self.pool1(x)
-        x = self.conv2(x)
-        x = self.pool2(x)
-        x = self.adaptive_pool(x)
+        # Use the last hidden state which has the shape [batch_size, sequence_length, hidden_size]
+        sequence_output = outputs.last_hidden_state
 
-        # 压平操作
-        x = x.view(x.size(0), -1)
+        # Permute the dimensions to [batch_size, hidden_size, sequence_length] for Conv1D
+        sequence_output = sequence_output.permute(0, 2, 1)
 
-        # 进行分类
-        logits = self.fc(x)
+        # Apply convolution and pooling
+        conv_output = self.conv1d(sequence_output)
+        pooled_output = self.pool(conv_output).squeeze(-1)  # Remove the last dimension after pooling
+
+        # Dropout for regularization
+        dropped = self.dropout(pooled_output)
+
+        # Fully connected layer
+        logits = self.fc(dropped)
         probabilities = self.softmax(logits)
+
         return probabilities
