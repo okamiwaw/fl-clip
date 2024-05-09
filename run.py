@@ -35,7 +35,7 @@ def get_train_dataloader(client_id):
                                   collate_fn=train_collate_fn,
                                   shuffle=True,
                                   pin_memory=True,
-                                  num_workers=0,
+                                  num_workers=8,
                                   )
     return train_dataloader
 
@@ -55,7 +55,7 @@ def get_valid_dataloader(data_type):
                                 collate_fn=val_collate_fn,
                                 shuffle=False,
                                 pin_memory=True,
-                                num_workers=0,
+                                num_workers=8,
                                 )
     return val_dataloader
 
@@ -73,7 +73,6 @@ class Runner:
         random.seed(seed)
         os.environ['PYTHONASHSEED'] = str(seed)
         os.environ['TOKENIZERS_PARALLELISM'] = 'false'
-
         mp.set_start_method('spawn')
 
 
