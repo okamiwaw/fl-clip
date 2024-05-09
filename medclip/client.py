@@ -41,11 +41,11 @@ class Client:
         self.val_person = val_person
         self.val_global = val_global
         self.local_model = MedCLIPModel(vision_cls=MedCLIPVisionModelViT).to("cuda:0")
-        self.person_model = MedCLIPModel(vision_cls=MedCLIPVisionModelViT).to("cuda:0")
+        self.person_model = MedCLIPModel(vision_cls=MedCLIPVisionModelViT).to("cuda:1")
         self.select_model_image = vgg11(
             num_classes=constants.SELECT_NUM
         ).to("cuda:0")
-        self.select_model_text = Bert_Classifier(num_classes=constants.SELECT_NUM).to("cuda:0")
+        self.select_model_text = Bert_Classifier(num_classes=constants.SELECT_NUM).to("cuda:1")
         self.textvision_lr = constants.VIT_BERT_LEARNING_RATE
         self.weight_decay = constants.WEIGHT_DECAY
         self.select_lr = constants.SELECT_MODEL_LEARNING_RATE
@@ -83,7 +83,7 @@ class Client:
 
     def person_train(self):
         print("personal model training starts")
-        loss_model = ImageTextContrastiveLoss(self.person_model).to("cuda:0")
+        loss_model = ImageTextContrastiveLoss(self.person_model).to("cuda:1")
         optimizer = optim.Adam(loss_model.parameters(), lr=self.textvision_lr)
         progress_bar = tqdm(enumerate(self.train_loader), total=len(self.train_loader), leave=True)
         scaler = GradScaler()
@@ -195,19 +195,3 @@ class Client:
             constants.CLIENT_ACC[self.client_id] = metric
         print(f"personal model acc is {metric}")
         self.log_metric(self.client_id, "person", metric)
-        # self.select_model.eval()
-        # with torch.no_grad():
-        #     metric = 0
-        #     for i, batch_data in enumerate(valid_person):
-        #         # input and expected output
-        #         images = batch_data["pixel_values"].to("cuda:0")
-        #         # generate label vector: image batch_size, same label
-        #         labels = np.ones((images.shape[0], 1)) * select_label
-        #         outputs = self.select_model(images)
-        #         labels = labels.argmax(1)
-        #         pred = outputs.argmax(1).cpu().numpy()
-        #         acc = (pred == labels).mean()
-        #         metric += acc
-        #     metric /= len(valid_person)
-        #     print(f"select model acc is {metric}")
-        # self.log_metric(self.client_id, "select", metric)
