@@ -161,9 +161,6 @@ class Client:
         if model_type == 'local':
             global_path = os.path.join(save_dir, "global_model.pth")
             torch.save(self.local_model.state_dict(), global_path)
-        if model_type == 'select':
-            select_path = os.path.join(save_dir, "select_model.pth")
-            torch.save(self.select_model.state_dict(), select_path)
         if model_type == 'person':
             model_path = os.path.join(save_dir, f"person_model_{self.client_id}.pth")
             torch.save(self.person_model.state_dict(), model_path)

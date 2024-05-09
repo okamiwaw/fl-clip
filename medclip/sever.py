@@ -5,7 +5,10 @@ import torch
 
 from medclip import constants, PromptClassifier
 import numpy as np
-
+def softmax(x):
+    """Compute softmax values for each sets of scores in x."""
+    e_x = np.exp(x - np.max(x))  # subtract the max for numerical stability
+    return e_x / e_x.sum(axis=0)  # the sum is computed along the only axis (axis=0)
 class Server:
     def __init__(self,
                  global_model=None,
@@ -42,8 +45,9 @@ class Server:
         client_num = len(self.client_ids)
         if model_type not in self.weights.keys():
             if model_type == "person_model":
-                self.weights["person_weights"] = {}
-                self.weights["person_weights"][client_id] = copy.deepcopy(model.state_dict())
+                if "person_weights" not in self.weights.keys():
+                    self.weights["person_weights"] = {}
+                self.weights["person_weights"][client_id] = copy.deepcopy(model)
             else:
                 self.weights[model_type] = copy.deepcopy(model)
                 model_dict = self.weights[model_type]
@@ -52,7 +56,7 @@ class Server:
                         model_dict[key] = model_dict[key] / client_num
         else:
             if model_type == "person_model":
-                self.weights["person_weights"][client_id] = copy.deepcopy(model.state_dict())
+                self.weights["person_weights"][client_id] = copy.deepcopy(model)
             else:
                 model_dict = model
                 for key in model_dict:
@@ -91,58 +95,74 @@ class Server:
                 self.person_models[client_id].load_state_dict(person_weight)
         self.weights = {}
 
-    # def validate(self, val_global):
-    #     thd = constants.THRESHOLD
-    #     select_model = self.select_model.to("cuda:0")
-    #     client_ids = self.client_ids
-    #     person_models = self.person_models
-    #     for client_id in client_ids:
-    #         person_models[client_id].to("cuda:0")
-    #     global_model = self.global_model.to("cuda:0")
-    #     pred_list = []
-    #     label_list = []
-    #     for i, batch_data in enumerate(val_global):
-    #         image = batch_data["pixel_values"].to("cuda:0")
-    #         outputs = self.select_model(image).cpu().detach().numpy()
-    #         max_index = np.argmax(outputs)
-    #         person_model = person_models[client_ids[max_index]]
-    #         if np.max(outputs) <= thd:
-    #             person_model = global_model
-    #         medclip_clf = PromptClassifier(person_model)
-    #         medclip_clf.eval()
-    #         outputs = medclip_clf(**batch_data)
-    #         pred = outputs['logits']
-    #         pred_list.append(pred)
-    #         label_list.append(batch_data['labels'])
-    #     pred_list = torch.cat(pred_list, 0)
-    #     labels = torch.cat(label_list).cpu().detach().numpy()
-    #     pred = pred_list.cpu().detach().numpy()
-    #     pred_label = pred.argmax(1)
-    #     acc = (pred_label == labels).mean()
-    #     print(acc)
-    #     self.log_metric( "person_model", acc)
-    #     pred_list = []
-    #     label_list = []
-    #     for i, batch_data in enumerate(val_global):
-    #         image = batch_data["pixel_values"].to("cuda:0")
-    #         outputs = self.select_model(image)
-    #         max_index = np.argmax(outputs.cpu().detach().numpy())
-    #         medclip_clf = PromptClassifier(global_model)
-    #         medclip_clf.eval()
-    #         outputs = medclip_clf(**batch_data)
-    #         pred = outputs['logits']
-    #         pred_list.append(pred)
-    #         label_list.append(batch_data['labels'])
-    #     pred_list = torch.cat(pred_list, 0)
-    #     labels = torch.cat(label_list).cpu().detach().numpy()
-    #     pred = pred_list.cpu().detach().numpy()
-    #     pred_label = pred.argmax(1)
-    #     acc = (pred_label == labels).mean()
-    #     self.log_metric("global_model", acc)
-    #     print(acc)
-    #     global_model.to("cpu")
-    #     for client_id in client_ids:
-    #         person_models[client_id].to("cpu")
+    def validate(self, val_global):
+        thd = constants.THRESHOLD
+        select_model_image = self.select_model_image.to("cuda:0")
+        select_model_text = self.select_model_text.to("cuda:0")
+        client_ids = self.client_ids
+        person_models = self.person_models
+        for client_id in client_ids:
+            person_models[client_id].to("cuda:0")
+        global_model = self.global_model.to("cuda:0")
+        pred_list = []
+        label_list = []
+        tasks = [
+            "Atelectasis",
+            "Cardiomegaly",
+            "Consolidation",
+            "Edema",
+            "Pleural Effusion",
+        ]
+        for i, batch_data in enumerate(val_global):
+            image = batch_data["pixel_values"].to("cuda:0")
+            outputs = select_model_image(image).cpu().detach().numpy()
+            outputs = softmax(outputs)
+            outputs2 = np.empty((1, 4))
+            for task in tasks:
+                input_ids = batch_data["prompt_inputs"][task]["input_ids"].to("cuda:0")
+                attention_mask = batch_data["prompt_inputs"][task]["attention_mask"].to("cuda:0")
+                if np.size(outputs2):
+                    outputs2 = select_model_text(input_ids, attention_mask).cpu().detach().numpy()
+                else:
+                    outputs2 += select_model_text(input_ids, attention_mask).cpu().detach().numpy()
+            outputs2 = outputs2.mean(axis=0).reshape(1, 4)
+            outputs = (outputs + outputs2) / 2
+            max_index = np.argmax(outputs)
+            person_model = person_models[client_ids[max_index]]
+            if np.max(outputs) <= thd:
+                person_model = global_model
+            medclip_clf = PromptClassifier(person_model)
+            medclip_clf.eval()
+            output = medclip_clf(**batch_data)
+            pred = output['logits']
+            pred_list.append(pred)
+            label_list.append(batch_data['labels'])
+        pred_list = torch.cat(pred_list, 0)
+        labels = torch.cat(label_list).cpu().detach().numpy()
+        pred = pred_list.cpu().detach().numpy()
+        pred_label = pred.argmax(1)
+        acc = (pred_label == labels).mean()
+        print(acc)
+        self.log_metric( "person_model", acc)
+        pred_list = []
+        label_list = []
+        for i, batch_data in enumerate(val_global):
+            medclip_clf = PromptClassifier(global_model)
+            medclip_clf.eval()
+            outputs = medclip_clf(**batch_data)
+            pred = outputs['logits']
+            pred_list.append(pred)
+            label_list.append(batch_data['labels'])
+        pred_list = torch.cat(pred_list, 0)
+        labels = torch.cat(label_list).cpu().detach().numpy()
+        pred = pred_list.cpu().detach().numpy()
+        pred_label = pred.argmax(1)
+        acc = (pred_label == labels).mean()
+        self.log_metric("global_model", acc)
+        print(acc)
+        global_model.to("cpu")
+        for client_id in client_ids:
+            person_models[client_id].to("cpu")
 
 
 

@@ -125,8 +125,6 @@ class Bert_Classifier(nn.Module):
     def __init__(self, num_classes):
         super(Bert_Classifier, self).__init__()
         self.bert = model
-        for param in self.bert.parameters():
-            param.requires_grad = False
         self.dropout = nn.Dropout(0.1)
         # Convolutional layer to process the sequence output of BERT
         # Assuming that the sequence length and number of filters are appropriately selected
@@ -134,30 +132,23 @@ class Bert_Classifier(nn.Module):
                                 out_channels=128,  # Number of filters
                                 kernel_size=3,  # Size of the kernel
                                 padding=1)  # Padding to keep sequence length consistent
-
         # Adaptive max pooling to reduce dimensionality and focus on most significant features
         self.pool = nn.AdaptiveMaxPool1d(1)
-
         # Fully connected layer for classification
         self.fc = nn.Linear(128, num_classes)
         self.softmax = nn.Softmax(dim=1)
 
     def forward(self, input_ids, attention_mask):
         outputs = self.bert(input_ids=input_ids, attention_mask=attention_mask)
-
         # Use the last hidden state which has the shape [batch_size, sequence_length, hidden_size]
         sequence_output = outputs.last_hidden_state
-
         # Permute the dimensions to [batch_size, hidden_size, sequence_length] for Conv1D
         sequence_output = sequence_output.permute(0, 2, 1)
-
         # Apply convolution and pooling
         conv_output = self.conv1d(sequence_output)
         pooled_output = self.pool(conv_output).squeeze(-1)  # Remove the last dimension after pooling
-
         # Dropout for regularization
         dropped = self.dropout(pooled_output)
-
         # Fully connected layer
         logits = self.fc(dropped)
         probabilities = self.softmax(logits)

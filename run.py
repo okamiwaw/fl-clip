@@ -13,7 +13,7 @@ from medclip.sever import Server
 from medclip.dataset import ImageTextContrastiveDataset, ImageTextContrastiveCollator, ZeroShotImageDataset, \
     ZeroShotImageCollator
 from medclip.select_model import vgg11
-
+from medclip.select_model import Bert_Classifier
 
 def get_train_dataloader(client_id):
     dataset_path = constants.DATASET_PATH
@@ -35,7 +35,7 @@ def get_train_dataloader(client_id):
                                   collate_fn=train_collate_fn,
                                   shuffle=True,
                                   pin_memory=True,
-                                  num_workers=8,
+                                  num_workers=0,
                                   )
     return train_dataloader
 
@@ -55,7 +55,7 @@ def get_valid_dataloader(data_type):
                                 collate_fn=val_collate_fn,
                                 shuffle=False,
                                 pin_memory=True,
-                                num_workers=8,
+                                num_workers=0,
                                 )
     return val_dataloader
 
@@ -81,14 +81,18 @@ class Runner:
         self.client_ids = constants.CLIENT_IDS
         self.rounds = constants.ROUNDS
         global_model = MedCLIPModel(vision_cls=MedCLIPVisionModelViT)
-        select_model = vgg11(
+        select_model_image = vgg11(
             num_classes=constants.SELECT_NUM
         )
-        state_dict = torch.load('./outputs/models/best/select_model.pth')
-        select_model.load_state_dict(state_dict)
+        select_model_text = Bert_Classifier(num_classes=constants.SELECT_NUM)
+        select_image_dict = torch.load('./outputs/models/best/select_model_image.pth')
+        select_text_dict = torch.load('./outputs/models/best/select_model_text.pth')
+        select_model_image.load_state_dict(select_image_dict)
+        select_model_text.load_state_dict(select_text_dict)
         log_file = constants.LOGFILE
         self.server = Server(global_model=global_model,
-                             select_model=select_model,
+                             select_model_image=select_model_image,
+                             select_model_text=select_model_text,
                              client_ids=self.client_ids,
                              log_file=log_file)
 
@@ -111,26 +115,26 @@ class Runner:
                                 log_file=log_file,
                                 local_dict=server.global_model.state_dict(),
                                 person_dict=server.person_models[client_id].state_dict(),
-                                select_dict=server.select_model.state_dict(),
+                                select_dict_image=server.select_model_image.state_dict(),
+                                select_dict_text=server.select_model_text.state_dict(),
                                 select_label=clients_label[client_id]
                                 )
-                client.validate()
-                p1 = mp.Process(target=client.person_train)
-                p2 = mp.Process(target=client.local_train)
-                p1.start()
-                p2.start()
-                p1.join()
-                p2.join()
+                # client.validate()
+                # p1 = mp.Process(target=client.person_train)
+                # p2 = mp.Process(target=client.local_train)
+                # p1.start()
+                # p2.start()
+                # p1.join()
+                # p2.join()
                 diff_local = client.compute_diff(server.global_model, "global")
                 server.receive(client_id=client_id,
-                               global_dict=diff_local,
-                               person_model=client.person_model
-                               )
-            val_global = get_valid_dataloader('global')
-            server.aggregate()
+                               model=diff_local,
+                               model_type="global_model")
+                server.receive(client_id=client_id,
+                               model=client.person_model.state_dict(),
+                               model_type="person_model")
+            # server.aggregate()
             server.validate(val_global)
-
-
 def main():
     runner = Runner()
     runner.config()
