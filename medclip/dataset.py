@@ -375,7 +375,6 @@ class ImageTextContrastiveCollator:
             aug_text_inputs = self.tokenizer(report_aug_list, truncation=True, padding=True, return_tensors='pt')
             inputs['aug_input_ids'] = aug_text_inputs['input_ids']
             inputs['aug_attention_mask'] = aug_text_inputs['attention_mask']
-
         return inputs
 
 

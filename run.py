@@ -31,7 +31,7 @@ def get_train_dataloader(client_id):
                                              imgtransform=transform, client_id=client_id)
     train_collate_fn = ImageTextContrastiveCollator()
     train_dataloader = DataLoader(train_data,
-                                  batch_size=64,
+                                  batch_size=48,
                                   collate_fn=train_collate_fn,
                                   shuffle=True,
                                   pin_memory=True,
