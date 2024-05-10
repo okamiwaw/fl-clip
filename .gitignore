@@ -1,5 +1,6 @@
 # 忽略特定目录
 Bio_ClinicalBERT/
+Swin_Transformer/
 data/
 local_data/
 pretrained/

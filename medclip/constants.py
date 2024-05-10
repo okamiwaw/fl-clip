@@ -1,5 +1,5 @@
 BERT_TYPE = './Bio_ClinicalBERT'
-VIT_TYPE = 'microsoft/swin-tiny-patch4-window7-224'
+VIT_TYPE = './Swin_Transformer '
 
 IMG_SIZE = 224
 IMG_MEAN = .5862785803043838

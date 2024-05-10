@@ -84,7 +84,7 @@ class MedCLIPVisionModel(nn.Module):
         return img_embeds
 
 class MedCLIPVisionModelViT(nn.Module):
-    '''take an VIT model as the backbone.
+    '''take an Swin_Transformer model as the backbone.
     '''
     def __init__(self, checkpoint=None, medclip_checkpoint=None) -> None:
         '''args:
