@@ -31,11 +31,11 @@ def get_train_dataloader(client_id):
                                              imgtransform=transform, client_id=client_id)
     train_collate_fn = ImageTextContrastiveCollator()
     train_dataloader = DataLoader(train_data,
-                                  batch_size=48,
+                                  batch_size=50,
                                   collate_fn=train_collate_fn,
                                   shuffle=True,
                                   pin_memory=True,
-                                  num_workers=8,
+                                  num_workers=4,
                                   )
     return train_dataloader
 
@@ -55,7 +55,7 @@ def get_valid_dataloader(data_type):
                                 collate_fn=val_collate_fn,
                                 shuffle=False,
                                 pin_memory=True,
-                                num_workers=8,
+                                num_workers=4,
                                 )
     return val_dataloader
 
@@ -106,6 +106,7 @@ class Runner:
                 val_person = get_valid_dataloader(client_id)
                 val_global = get_valid_dataloader('global')
                 clients_label = constants.CLIENTS_LABEL
+                torch.cuda.empty_cache()
                 client = Client(client_id=client_id,
                                 train_dataloader=train_dataloader,
                                 val_person=val_person,
