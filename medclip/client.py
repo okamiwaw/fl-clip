@@ -41,18 +41,22 @@ class Client:
         self.val_person = val_person
         self.val_global = val_global
         self.local_model = MedCLIPModel(vision_cls=MedCLIPVisionModelViT).to("cuda:0")
-        self.person_model = MedCLIPModel(vision_cls=MedCLIPVisionModelViT).to("cuda:1")
+        self.person_model = MedCLIPModel(vision_cls=MedCLIPVisionModelViT).to("cuda:0")
         self.select_model_image = vgg11(
             num_classes=constants.SELECT_NUM
         ).to("cuda:0")
-        self.select_model_text = Bert_Classifier(num_classes=constants.SELECT_NUM).to("cuda:1")
+        self.select_model_text = Bert_Classifier(num_classes=constants.SELECT_NUM).to("cuda:0")
         self.textvision_lr = constants.VIT_BERT_LEARNING_RATE
         self.weight_decay = constants.WEIGHT_DECAY
         self.select_lr = constants.SELECT_MODEL_LEARNING_RATE
-        self.local_model.load_state_dict(copy.deepcopy(local_dict))
-        self.person_model.load_state_dict(copy.deepcopy(person_dict))
-        self.select_model_image.load_state_dict(copy.deepcopy(select_dict_image))
-        self.select_model_text.load_state_dict(copy.deepcopy(select_dict_text))
+        if local_dict is not None:
+            self.local_model.load_state_dict(copy.deepcopy(local_dict))
+        if person_dict is not None:
+            self.person_model.load_state_dict(copy.deepcopy(person_dict))
+        if select_dict_image is not None:
+            self.select_model_image.load_state_dict(copy.deepcopy(select_dict_image))
+        if select_dict_text is not None:
+            self.select_model_text.load_state_dict(copy.deepcopy(select_dict_text))
 
     def log_metric(self, client, task, acc):
         log_file = self.log_file
@@ -83,7 +87,7 @@ class Client:
 
     def person_train(self):
         print("personal model training starts")
-        loss_model = ImageTextContrastiveLoss(self.person_model).to("cuda:1")
+        loss_model = ImageTextContrastiveLoss(self.person_model).to("cuda:0")
         optimizer = optim.Adam(loss_model.parameters(), lr=self.textvision_lr)
         progress_bar = tqdm(enumerate(self.train_loader), total=len(self.train_loader), leave=True)
         scaler = GradScaler()
