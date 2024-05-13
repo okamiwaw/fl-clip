@@ -337,10 +337,10 @@ class ImageTextContrastiveCollator:
         '''
         if use_eda:
             import nltk
-            nltk.data.path.append("/home/ligong2/nltk_data")
-            nltk.download('stopwords', quiet=True)
-            nltk.download('omw-1.4', quiet=True)
-            nltk.download('wordnet', quiet=True)
+            nltk.data.path.append("/root/nltk_data")
+            # nltk.download('stopwords', quiet=True)
+            # nltk.download('omw-1.4', quiet=True)
+            # nltk.download('wordnet', quiet=True)
             from textaugment import EDA
             self.eda = EDA()
         else:
