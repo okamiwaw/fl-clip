@@ -83,7 +83,7 @@ for i, batch_data in enumerate(val_data):
         else:
             outputs2 += select_model_text(input_ids, attention_mask).cpu().detach().numpy()
     outputs2 = outputs2.mean(axis=0).reshape(1, 4)
-    outputs = (3 * outputs + outputs2) / 4
+    outputs = outputs
     max_index = np.argmax(outputs)
     person_model = person_models[client_ids[max_index]]
     if np.max(outputs) <= thd:
@@ -116,19 +116,19 @@ print(acc)
 # pred_label = pred.argmax(1)
 # acc = (pred_label == labels).mean()
 # print(acc)
-global_model = person_models["client_1"]
-pred_list = []
-label_list = []
-for i, batch_data in enumerate(val_data):
-    medclip_clf = PromptClassifier(global_model)
-    medclip_clf.eval()
-    outputs = medclip_clf(**batch_data)
-    pred = outputs['logits'].to("cuda:0")
-    pred_list.append(pred)
-    label_list.append(batch_data['labels'])
-pred_list = torch.cat(pred_list, 0)
-labels = torch.cat(label_list).cpu().detach().numpy()
-pred = pred_list.cpu().detach().numpy()
-pred_label = pred.argmax(1)
-acc = (pred_label == labels).mean()
-print(acc)
+# global_model = person_models["client_1"]
+# pred_list = []
+# label_list = []
+# for i, batch_data in enumerate(val_data):
+#     medclip_clf = PromptClassifier(global_model)
+#     medclip_clf.eval()
+#     outputs = medclip_clf(**batch_data)
+#     pred = outputs['logits'].to("cuda:0")
+#     pred_list.append(pred)
+#     label_list.append(batch_data['labels'])
+# pred_list = torch.cat(pred_list, 0)
+# labels = torch.cat(label_list).cpu().detach().numpy()
+# pred = pred_list.cpu().detach().numpy()
+# pred_label = pred.argmax(1)
+# acc = (pred_label == labels).mean()
+# print(acc)
