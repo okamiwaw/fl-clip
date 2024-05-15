@@ -161,12 +161,14 @@ class Runner:
                 print(f"select model_text acc is {metric2}")
             if metric1 > select_image_acc:
                 select_image_acc = metric1
+                print(f'metric1:{select_image_acc}')
                 save_dir = f'outputs/models/best'
                 os.makedirs(save_dir, exist_ok=True)
                 select_path = os.path.join(save_dir, "outputs/models/best/select_model_image.pth")
                 torch.save(server.select_model_image.state_dict(), select_path)
             if metric2 > select_text_acc:
                 select_text_acc = metric2
+                print(f'metric2:{select_text_acc}')
                 save_dir = f'outputs/models/best'
                 os.makedirs(save_dir, exist_ok=True)
                 select_path = os.path.join(save_dir, "outputs/models/best/select_model_text.pth")
