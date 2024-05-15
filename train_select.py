@@ -166,7 +166,7 @@ class Runner:
                 select_path = os.path.join(save_dir, "outputs/models/best/select_model_image.pth")
                 torch.save(server.select_model_image.state_dict(), select_path)
             if metric2 > select_text_acc:
-                select_text__acc = metric2
+                select_text_acc = metric2
                 save_dir = f'outputs/models/best'
                 os.makedirs(save_dir, exist_ok=True)
                 select_path = os.path.join(save_dir, "outputs/models/best/select_model_text.pth")

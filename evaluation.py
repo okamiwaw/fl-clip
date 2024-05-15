@@ -50,7 +50,7 @@ select_model_image.to("cuda:0")
 select_model_text.to("cuda:0")
 global_dict = torch.load('./outputs/models/best_model/global_model.pth', map_location=torch.device('cuda:0'))
 global_model.load_state_dict(global_dict)
-val_data = get_valid_dataloader('client_1')
+val_data = get_valid_dataloader('client_2')
 thd = constants.THRESHOLD
 client_ids = constants.CLIENT_IDS
 person_models = {}
@@ -94,7 +94,6 @@ for i, batch_data in enumerate(val_data):
     pred = output['logits'].to("cuda:0")
     pred_list.append(pred)
     label_list.append(batch_data['labels'])
-    print(i)
 pred_list = torch.cat(pred_list, 0)
 labels = torch.cat(label_list).cpu().detach().numpy()
 pred = pred_list.cpu().detach().numpy()
@@ -121,7 +120,6 @@ global_model = person_models["client_1"]
 pred_list = []
 label_list = []
 for i, batch_data in enumerate(val_data):
-    print(i)
     medclip_clf = PromptClassifier(global_model)
     medclip_clf.eval()
     outputs = medclip_clf(**batch_data)
