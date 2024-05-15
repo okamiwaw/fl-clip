@@ -61,45 +61,45 @@ for client_id in client_ids:
     person_models[client_id] = person_model
 for client_id in client_ids:
     person_models[client_id].to("cuda:0")
-pred_list = []
-label_list = []
-tasks = [
-    "Atelectasis",
-    "Cardiomegaly",
-    "Consolidation",
-    "Edema",
-    "Pleural Effusion",
-]
-for i, batch_data in enumerate(val_data):
-    image = batch_data["pixel_values"].to("cuda:0")
-    outputs = select_model_image(image).cpu().detach().numpy()
-    outputs = softmax(outputs)
-    outputs2 = np.empty((1, 4))
-    for task in tasks:
-        input_ids = batch_data["prompt_inputs"][task]["input_ids"].to("cuda:0")
-        attention_mask = batch_data["prompt_inputs"][task]["attention_mask"].to("cuda:0")
-        if np.size(outputs2):
-            outputs2 = select_model_text(input_ids, attention_mask).cpu().detach().numpy()
-        else:
-            outputs2 += select_model_text(input_ids, attention_mask).cpu().detach().numpy()
-    outputs2 = outputs2.mean(axis=0).reshape(1, 4)
-    outputs = outputs
-    max_index = np.argmax(outputs)
-    person_model = person_models[client_ids[max_index]]
-    if np.max(outputs) <= thd:
-        person_model = global_model
-    medclip_clf = PromptClassifier(person_model)
-    medclip_clf.eval()
-    output = medclip_clf(**batch_data)
-    pred = output['logits'].to("cuda:0")
-    pred_list.append(pred)
-    label_list.append(batch_data['labels'])
-pred_list = torch.cat(pred_list, 0)
-labels = torch.cat(label_list).cpu().detach().numpy()
-pred = pred_list.cpu().detach().numpy()
-pred_label = pred.argmax(1)
-acc = (pred_label == labels).mean()
-print(acc)
+# pred_list = []
+# label_list = []
+# tasks = [
+#     "Atelectasis",
+#     "Cardiomegaly",
+#     "Consolidation",
+#     "Edema",
+#     "Pleural Effusion",
+# ]
+# for i, batch_data in enumerate(val_data):
+#     image = batch_data["pixel_values"].to("cuda:0")
+#     outputs = select_model_image(image).cpu().detach().numpy()
+#     outputs = softmax(outputs)
+#     outputs2 = np.empty((1, 4))
+#     for task in tasks:
+#         input_ids = batch_data["prompt_inputs"][task]["input_ids"].to("cuda:0")
+#         attention_mask = batch_data["prompt_inputs"][task]["attention_mask"].to("cuda:0")
+#         if np.size(outputs2):
+#             outputs2 = select_model_text(input_ids, attention_mask).cpu().detach().numpy()
+#         else:
+#             outputs2 += select_model_text(input_ids, attention_mask).cpu().detach().numpy()
+#     outputs2 = outputs2.mean(axis=0).reshape(1, 4)
+#     outputs = outputs
+#     max_index = np.argmax(outputs)
+#     person_model = person_models[client_ids[max_index]]
+#     if np.max(outputs) <= thd:
+#         person_model = global_model
+#     medclip_clf = PromptClassifier(person_model)
+#     medclip_clf.eval()
+#     output = medclip_clf(**batch_data)
+#     pred = output['logits'].to("cuda:0")
+#     pred_list.append(pred)
+#     label_list.append(batch_data['labels'])
+# pred_list = torch.cat(pred_list, 0)
+# labels = torch.cat(label_list).cpu().detach().numpy()
+# pred = pred_list.cpu().detach().numpy()
+# pred_label = pred.argmax(1)
+# acc = (pred_label == labels).mean()
+# print(acc)
 # pred_list = []
 # label_list = []
 # for i, batch_data in enumerate(val_data):
@@ -116,19 +116,19 @@ print(acc)
 # pred_label = pred.argmax(1)
 # acc = (pred_label == labels).mean()
 # print(acc)
-# global_model = person_models["client_1"]
-# pred_list = []
-# label_list = []
-# for i, batch_data in enumerate(val_data):
-#     medclip_clf = PromptClassifier(global_model)
-#     medclip_clf.eval()
-#     outputs = medclip_clf(**batch_data)
-#     pred = outputs['logits'].to("cuda:0")
-#     pred_list.append(pred)
-#     label_list.append(batch_data['labels'])
-# pred_list = torch.cat(pred_list, 0)
-# labels = torch.cat(label_list).cpu().detach().numpy()
-# pred = pred_list.cpu().detach().numpy()
-# pred_label = pred.argmax(1)
-# acc = (pred_label == labels).mean()
-# print(acc)
+global_model = person_models["client_2"]
+pred_list = []
+label_list = []
+for i, batch_data in enumerate(val_data):
+    medclip_clf = PromptClassifier(global_model)
+    medclip_clf.eval()
+    outputs = medclip_clf(**batch_data)
+    pred = outputs['logits'].to("cuda:0")
+    pred_list.append(pred)
+    label_list.append(batch_data['labels'])
+pred_list = torch.cat(pred_list, 0)
+labels = torch.cat(label_list).cpu().detach().numpy()
+pred = pred_list.cpu().detach().numpy()
+pred_label = pred.argmax(1)
+acc = (pred_label == labels).mean()
+print(acc)
