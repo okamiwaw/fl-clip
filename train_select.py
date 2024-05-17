@@ -36,7 +36,7 @@ def get_train_dataloader(client_id):
                                   collate_fn=train_collate_fn,
                                   shuffle=True,
                                   pin_memory=True,
-                                  num_workers=8,
+                                  num_workers=2,
                                   )
     return train_dataloader
 
@@ -56,7 +56,7 @@ def get_valid_dataloader( data_type):
                                 collate_fn=val_collate_fn,
                                 shuffle=False,
                                 pin_memory=True,
-                                num_workers=8,
+                                num_workers=2,
                                 )
     return val_dataloader
 
