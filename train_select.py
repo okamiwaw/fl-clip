@@ -16,6 +16,7 @@ from medclip.dataset import ImageTextContrastiveDataset, ImageTextContrastiveCol
 from medclip.select_model import vgg11
 from medclip.select_model import Bert_Classifier
 
+
 def get_train_dataloader(client_id):
     dataset_path = constants.DATASET_PATH
     datalist_path = constants.DATALIST_PATH
@@ -41,7 +42,7 @@ def get_train_dataloader(client_id):
     return train_dataloader
 
 
-def get_valid_dataloader( data_type):
+def get_valid_dataloader(data_type):
     dataset_path = constants.DATASET_PATH
     datalist_path = constants.DATALIST_PATH
     cls_prompts = generate_chexpert_class_prompts(n=10)
@@ -60,6 +61,16 @@ def get_valid_dataloader( data_type):
                                 )
     return val_dataloader
 
+
+def log_metric(r, type, acc):
+    log_file = './outputs/log/log_select.txt'
+    folder_path = os.path.dirname(log_file)
+    if not os.path.exists(folder_path):
+        os.makedirs(folder_path)
+    with open(log_file, 'a') as f:
+        f.write(f'Round:{r} {type} :ACC: {acc:.4f}\n')
+
+
 class Runner:
     def __init__(self):
         # set the initial environment
@@ -75,7 +86,6 @@ class Runner:
         os.environ['PYTHONASHSEED'] = str(seed)
         os.environ['TOKENIZERS_PARALLELISM'] = 'false'
         mp.set_start_method('spawn')
-
 
     def config(self):
         self.client_ids = constants.CLIENT_IDS
@@ -141,7 +151,7 @@ class Runner:
                     # input and expected output
                     images = batch_data["pixel_values"].to("cuda:0")
                     client_ids = batch_data["clients"]
-                    label_mapping = [[1, 0, 0, 0],[0, 1, 0, 0], [0, 0, 1, 0],[0, 0, 0, 1]]
+                    label_mapping = [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]
                     select_labels = [label_mapping[client_id] for client_id in client_ids]
                     labels = np.ones((images.shape[0], 1)) * select_labels
                     outputs_image = select_model_image(images)
@@ -157,6 +167,8 @@ class Runner:
                     metric2 += acc2
                 metric1 /= len(val_global)
                 metric2 /= len(val_global)
+                log_metric(r, 'image', metric1)
+                log_metric(r, 'text', metric2)
                 print(f"select model_image acc is {metric1}")
                 print(f"select model_text acc is {metric2}")
             if metric1 > select_image_acc:

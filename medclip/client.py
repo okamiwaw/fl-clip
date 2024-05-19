@@ -41,7 +41,7 @@ class Client:
         self.val_person = val_person
         self.val_global = val_global
         self.local_model = MedCLIPModel(vision_cls=MedCLIPVisionModelViT).to("cuda:0")
-        self.person_model = MedCLIPModel(vision_cls=MedCLIPVisionModelViT).to("cuda:0")
+        self.person_model = MedCLIPModel(vision_cls=MedCLIPVisionModelViT).to("cuda:1")
         self.select_model_image = vgg11(
             num_classes=constants.SELECT_NUM
         ).to("cuda:0")
@@ -87,7 +87,7 @@ class Client:
 
     def person_train(self):
         print("personal model training starts")
-        loss_model = ImageTextContrastiveLoss(self.person_model).to("cuda:0")
+        loss_model = ImageTextContrastiveLoss(self.person_model).to("cuda:1")
         optimizer = optim.Adam(loss_model.parameters(), lr=self.textvision_lr)
         progress_bar = tqdm(enumerate(self.train_loader), total=len(self.train_loader), leave=True)
         scaler = GradScaler()
@@ -169,10 +169,8 @@ class Client:
             model_path = os.path.join(save_dir, f"person_model_{self.client_id}.pth")
             torch.save(self.person_model.state_dict(), model_path)
 
-    def validate(self):
-        valid_person = self.val_person
+    def validate_global(self):
         valid_global = self.val_global
-        select_label = self.select_label
         medclip_clf = PromptClassifier(self.local_model)
         evaluator = Evaluator(
             medclip_clf=medclip_clf,
@@ -184,8 +182,11 @@ class Client:
         if metric > constants.GLOBAL_ACC:
             self.save_best_model('local')
             constants.GLOBAL_ACC = metric
-        print(f"local model acc is {metric}")
-        self.log_metric(self.client_id, "local", metric)
+        print(f"global model acc is {metric}")
+        self.log_metric(self.client_id, "global", metric)
+
+    def validate_person(self):
+        valid_person = self.val_person
         medclip_clf = PromptClassifier(self.person_model)
         evaluator = Evaluator(
             medclip_clf=medclip_clf,

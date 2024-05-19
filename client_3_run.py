@@ -62,7 +62,7 @@ np.random.seed(seed)
 random.seed(seed)
 os.environ['PYTHONASHSEED'] = str(seed)
 os.environ['TOKENIZERS_PARALLELISM'] = 'false'
-client_id = "client_2"
+client_id = "client_3"
 
 log_file = constants.LOGFILE
 train_dataloader = get_train_dataloader(client_id)
@@ -86,7 +86,7 @@ for r in range(100):
     scores = evaluator.evaluate()
     metric = scores['acc']
     print(f"local model acc is {metric}")
-    log_file = "./outputs/log/client_2.txt"
+    log_file = "./outputs/log/client_3.txt"
     folder_path = os.path.dirname(log_file)
     if not os.path.exists(folder_path):
         os.makedirs(folder_path)

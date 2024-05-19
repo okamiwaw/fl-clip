@@ -47,6 +47,7 @@ class VGG(nn.Module):
             nn.ReLU(True),
             nn.Dropout(),
             nn.Linear(4096, num_classes),
+            nn.Softmax(dim=1),
         )
         if init_weights:
             self._initialize_weights()
@@ -152,5 +153,4 @@ class Bert_Classifier(nn.Module):
         # Fully connected layer
         logits = self.fc(dropped)
         probabilities = self.softmax(logits)
-
         return probabilities

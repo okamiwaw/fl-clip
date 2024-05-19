@@ -90,9 +90,8 @@ class Server:
                     if client == client_id:
                         person_weight[key] += weights["person_weights"][client][key] * self.soft_lambda
                     else:
-                        person_weight[key] += weights["person_weights"][client][key] * (1 - self.soft_lambda) / (
-                                len(self.client_ids) - 1)
-                self.person_models[client_id].load_state_dict(person_weight)
+                        person_weight[key] += weights["person_weights"][client][key] * (1 - self.soft_lambda) / (len(self.client_ids) - 1)
+            self.person_models[client_id].load_state_dict(person_weight)
         self.weights = {}
 
     def validate(self, val_global):
