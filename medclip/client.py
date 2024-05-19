@@ -184,6 +184,7 @@ class Client:
             constants.GLOBAL_ACC = metric
         print(f"global model acc is {metric}")
         self.log_metric(self.client_id, "global", metric)
+        self.log_metric(self.client_id, "global_best", constants.GLOBAL_ACC)
 
     def validate_person(self):
         valid_person = self.val_person
@@ -200,3 +201,4 @@ class Client:
             constants.CLIENT_ACC[self.client_id] = metric
         print(f"personal model acc is {metric}")
         self.log_metric(self.client_id, "person", metric)
+        self.log_metric(self.client_id, "person_best", constants.CLIENT_ACC[self.client_id])
