@@ -57,11 +57,13 @@ global_dict = torch.load('./outputs/models/best_model/global_model.pth', map_loc
 global_model.load_state_dict(global_dict)
 
 thd = constants.THRESHOLD
-client_ids = constants.CLIENT_IDS
+client_ids = ["client_1", "client_2", "client_3", "client_4"]
 person_models = {}
 for client_id in client_ids:
     person_dict = torch.load(f'./outputs/models/best_model/person_model_{client_id}.pth',
                              map_location=torch.device('cuda:0'))
+    # person_dict = torch.load(f'./outputs/models/best/{client_id}.pth',
+    #                          map_location=torch.device('cuda:0'))
     person_model = MedCLIPModel(vision_cls=MedCLIPVisionModelViT)
     person_model.load_state_dict(person_dict)
     person_models[client_id] = person_model
@@ -81,25 +83,23 @@ def eval_personal(client_id):
         "Pleural Effusion",
     ]
     for i, batch_data in enumerate(val_data):
-        # image = batch_data["pixel_values"].to("cuda:0")
-        # outputs = select_model_image(image).cpu().detach().numpy()
-        # outputs = softmax(outputs)
-        # outputs2 = np.empty((1, 4))
-        # for task in tasks:
-        #     input_ids = batch_data["prompt_inputs"][task]["input_ids"].to("cuda:0")
-        #     attention_mask = batch_data["prompt_inputs"][task]["attention_mask"].to("cuda:0")
-        #     if np.size(outputs2):
-        #         outputs2 = select_model_text(input_ids, attention_mask).cpu().detach().numpy()
-        #     else:
-        #         outputs2 += select_model_text(input_ids, attention_mask).cpu().detach().numpy()
-        #     if i == 20:
-        #         print(1)
-        # outputs2 = outputs2.mean(axis=0).reshape(1, 4)
-        # outputs = (outputs * 2 + outputs2) / 3
-        # max_index = np.argmax(outputs)
-        # person_model = person_models[client_ids[max_index]]
-        # if np.max(outputs) <= thd:
-        #     person_model = global_model
+        image = batch_data["pixel_values"].to("cuda:0")
+        outputs = select_model_image(image).cpu().detach().numpy()
+        outputs = softmax(outputs)
+        outputs2 = np.empty((1, 4))
+        for task in tasks:
+            input_ids = batch_data["prompt_inputs"][task]["input_ids"].to("cuda:0")
+            attention_mask = batch_data["prompt_inputs"][task]["attention_mask"].to("cuda:0")
+            if np.size(outputs2):
+                outputs2 = select_model_text(input_ids, attention_mask).cpu().detach().numpy()
+            else:
+                outputs2 += select_model_text(input_ids, attention_mask).cpu().detach().numpy()
+        outputs2 = outputs2.mean(axis=0).reshape(1, 4)
+        outputs = (outputs * 2 + outputs2) / 3
+        max_index = np.argmax(outputs)
+        person_model = person_models[client_id]
+        if np.max(outputs) <= thd:
+            person_model = global_model
         person_model = person_models[client_id]
         medclip_clf = PromptClassifier(person_model)
         medclip_clf.eval()
@@ -134,5 +134,7 @@ def eval_global(client_id):
     print(f'global model in {client_id} its acc is {acc}')
 
 for client_id in client_ids:
+    if client_id == "client_1" or client_id == "client_2":
+        continue
     eval_personal(client_id)
     eval_global(client_id)

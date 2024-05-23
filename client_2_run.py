@@ -63,7 +63,7 @@ random.seed(seed)
 os.environ['PYTHONASHSEED'] = str(seed)
 os.environ['TOKENIZERS_PARALLELISM'] = 'false'
 client_id = "client_2"
-
+best_acc = 0
 log_file = constants.LOGFILE
 train_dataloader = get_train_dataloader(client_id)
 val_person = get_valid_dataloader(client_id)
@@ -92,4 +92,8 @@ for r in range(100):
         os.makedirs(folder_path)
     with open(log_file, 'a') as f:
         f.write(f'Round: {round}, {client_id} :ACC: {metric:.4f}\n')
+    if metric > best_acc:
+        best_acc = metric
+        save_path = f'./outputs/models/best/{client_id}.pth'
+        torch.save(client.local_model.state_dict(), save_path)
 

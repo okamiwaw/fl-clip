@@ -125,7 +125,7 @@ class Server:
                 else:
                     outputs2 += select_model_text(input_ids, attention_mask).cpu().detach().numpy()
             outputs2 = outputs2.mean(axis=0).reshape(1, 4)
-            outputs = (outputs + outputs2) / 2
+            outputs = (2 * outputs + outputs2) / 2
             max_index = np.argmax(outputs)
             person_model = person_models[client_ids[max_index]]
             if np.max(outputs) <= thd:

@@ -47,7 +47,7 @@ class VGG(nn.Module):
             nn.ReLU(True),
             nn.Dropout(),
             nn.Linear(4096, num_classes),
-            nn.Softmax(dim=1),
+            # nn.Softmax(dim=1),
         )
         if init_weights:
             self._initialize_weights()
@@ -138,6 +138,8 @@ class Bert_Classifier(nn.Module):
         # Fully connected layer for classification
         self.fc = nn.Linear(128, num_classes)
         self.softmax = nn.Softmax(dim=1)
+        for param in self.bert.parameters():
+            param.requires_grad = False
 
     def forward(self, input_ids, attention_mask):
         outputs = self.bert(input_ids=input_ids, attention_mask=attention_mask)

@@ -142,13 +142,13 @@
 # import pandas as pd
 #
 # # 加载CSV文件
-# df = pd.read_csv('b.csv')
+# df = pd.read_csv('a.csv')
 #
 # # 初始化一个空的DataFrame来存储结果
 # result_df = pd.DataFrame()
 #
 # # 对于第5到9列
-# for col in range(1, 6):  # Python的索引从0开始，所以第5列实际上是索引4
+# for col in range(6, 11):  # Python的索引从0开始，所以第5列实际上是索引4
 #     # 找出该列值为1的行
 #     filtered_rows = df[df.iloc[:, col] == 1]
 #     # 如果找到的行数超过200，则只保留前200行
@@ -173,12 +173,12 @@
 # import pandas as pd
 #
 # # 读取CSV文件
-# df = pd.read_csv('c.csv')
+# df = pd.read_csv('output.csv')
 #
 # # 筛选条件：从第5列到第10列的绝对值和为1
-# filtered_df = df[df.iloc[:, 1:6].apply(lambda x: x.sum(), axis=1) == 1]
+# filtered_df = df[df.iloc[:, 6:11].apply(lambda x: x.sum(), axis=1) == 1]
 #
-# filtered_df.to_csv('d.csv', index=False)
+# filtered_df.to_csv('a.csv', index=False)
 
 
 # import pandas as pd
@@ -255,7 +255,7 @@ import pandas as pd
 import numpy as np
 
 # 读取CSV文件
-df = pd.read_csv('client_4_t.csv')
+df = pd.read_csv('client_1_t.csv')
 
 # 确保你的数据行数足够抽取5000项
 if len(df) < 6000:
@@ -266,14 +266,15 @@ random_indices = np.random.choice(df.index, size=5000, replace=False)
 sampled_df = df.loc[random_indices]
 
 # 保存到新的CSV文件
-sampled_df.to_csv('client_4_t.csv', index=False)
+sampled_df.to_csv('client_1_t.csv', index=False)
 # import pandas as pd
 #
 # # 读取CSV文件
-# df = pd.read_csv('client_2_v.csv')  # 替换 'your_file.csv' 为你的文件名
+# df = pd.read_csv('client_1_v.csv')  # 替换 'your_file.csv' 为你的文件名
 #
 # # 添加新列，所有值设为1
-# df['client'] = 3
+# df['client'] = 0
 #
 # # 保存修改后的CSV文件
-# df.to_csv('client_4_v.csv', index=False)  # 可以修改文件名为你希望的新文件名
+# df.to_csv('client_1_v.csv', index=False)  # 可以修改文件名为你希望的新文件名
+
