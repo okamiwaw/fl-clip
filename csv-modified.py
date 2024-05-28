@@ -8,7 +8,7 @@
 #     return df
 #
 # # 读取CSV文件
-# file_path = 'raw.csv'  # 替换为你的CSV文件路径
+# file_path = 'raw2.csv'  # 替换为你的CSV文件路径
 # df = pd.read_csv(file_path)
 #
 # # 请告诉我开始列和结束列的索引（i和j）
@@ -18,7 +18,7 @@
 # # 应用替换
 # df = replace_values(df, start_col_index, end_col_index)
 # # 读取CSV文件并清理
-# output_file_path = 'a.csv'  # 您可以更改这个文件名
+# output_file_path = 'b.csv'  # 您可以更改这个文件名
 # df.to_csv(output_file_path, index=False)
 # print("数据已成功保存到", output_file_path)
 
@@ -173,12 +173,12 @@
 # import pandas as pd
 #
 # # 读取CSV文件
-# df = pd.read_csv('output.csv')
+# df = pd.read_csv('c.csv')
 #
 # # 筛选条件：从第5列到第10列的绝对值和为1
-# filtered_df = df[df.iloc[:, 6:11].apply(lambda x: x.sum(), axis=1) == 1]
+# filtered_df = df[df.iloc[:, 5:10].sum(axis=1) == 1]
 #
-# filtered_df.to_csv('a.csv', index=False)
+# filtered_df.to_csv('c.csv', index=False)
 
 
 # import pandas as pd
@@ -251,30 +251,196 @@
 #     writer = csv.writer(outfile)
 #     writer.writerows(data)
 
-import pandas as pd
-import numpy as np
-
-# 读取CSV文件
-df = pd.read_csv('client_1_t.csv')
-
-# 确保你的数据行数足够抽取5000项
-if len(df) < 6000:
-    raise ValueError("数据项不足6000，无法抽取。")
-
-# 随机抽取5000项
-random_indices = np.random.choice(df.index, size=5000, replace=False)
-sampled_df = df.loc[random_indices]
-
-# 保存到新的CSV文件
-sampled_df.to_csv('client_1_t.csv', index=False)
+# import pandas as pd
+# import numpy as np
+#
+# # 读取CSV文件
+# df = pd.read_csv('client_1_t.csv')
+#
+# # 确保你的数据行数足够抽取5000项
+# if len(df) < 6000:
+#     raise ValueError("数据项不足6000，无法抽取。")
+#
+# # 随机抽取5000项
+# random_indices = np.random.choice(df.index, size=5000, replace=False)
+# sampled_df = df.loc[random_indices]
+#
+# # 保存到新的CSV文件
+# sampled_df.to_csv('client_1_t.csv', index=False)
 # import pandas as pd
 #
 # # 读取CSV文件
-# df = pd.read_csv('client_1_v.csv')  # 替换 'your_file.csv' 为你的文件名
+# df = pd.read_csv('a.csv')  # 替换 'your_file.csv' 为你的文件名
 #
 # # 添加新列，所有值设为1
-# df['client'] = 0
+# df['client'] = 3
 #
 # # 保存修改后的CSV文件
-# df.to_csv('client_1_v.csv', index=False)  # 可以修改文件名为你希望的新文件名
+# df.to_csv('a.csv', index=False)  # 可以修改文件名为你希望的新文件名
 
+# import pandas as pd
+# import re
+#
+# # 读取CSV文件
+# input_file = 'input.csv'
+# output_file = 'output.csv'
+# df = pd.read_csv(input_file)
+#
+# # 定义提取Chest后面的部分的函数
+# def extract_chest_part(report):
+#     # 使用正则表达式提取“chest”后的部分，不区分大小写
+#     match1 = re.search(r'(?i)chest .*', report, re.DOTALL)
+#     match2 = re.search(r'(?i)chest:.*', report, re.DOTALL)
+#     match3 = re.search(r'[PERSONALNAME].*', report, re.DOTALL)
+#     if match1:
+#         return match1.group(0)
+#     elif match2:
+#         return match2.group(0)
+#     elif match3:
+#         return match3.group(0)
+#     else:
+#         return report  # 没有“chest”的情况保留原报告
+#
+# # 应用提取函数到report列
+# df['Report'] = df['Report'].apply(extract_chest_part)
+#
+# # 保存处理后的数据到新的CSV文件
+# df.to_csv(output_file, index=False)
+#
+# import pandas as pd
+# import re
+#
+# # 读取CSV文件
+# input_file = 'd.csv'
+# output_file = 'e.csv'
+# df = pd.read_csv(input_file)
+#
+# # 定义提取chest后面部分并去除transcribed后内容的函数（不区分大小写）
+# def extract_chest_part(report):
+#
+#     cleaned_report = re.sub(r'Dr.*', '', report, flags=re.DOTALL)
+#     return cleaned_report
+#     # chest_match = re.search(r'Medical question:.*', report, re.DOTALL)
+#     # if chest_match:
+#     #     return chest_match.group(0)
+#     # else:
+#     #     return report  # 没有“chest”的情况保留原报告
+#
+# # 应用提取函数到report列
+# df['Report'] = df['Report'].apply(extract_chest_part)
+#
+# # 保存处理后的数据到新的CSV文件
+# df.to_csv(output_file, index=False)
+
+
+# 定义一个函数来计算句子的单词数并过滤出单词数超过10的句子
+# def filter_sentences(sentence):
+#     # 使用/n分割句子
+#     sentences = sentence.split('\n')
+#     # 过滤出单词数超过10的句子
+#     filtered = [s for s in sentences if 'ADDRESS' not in s]
+#     # filtered = [s for s in sentences if 'COMMENT' not in s]
+#     # filtered = [s for s in sentences if len(s.split()) >= 6]
+#
+#     # 返回过滤后的句子，重新用/n连接
+#     return '\n'.join(filtered)
+#
+# # 应用函数到Report列
+# df['Report'] = df['Report'].apply(filter_sentences)
+# df = df[df['Report'] != '']
+# # 输出或保存结果
+# output_file_path = 'h.csv'
+# df.to_csv(output_file_path, index=False)
+#
+# print("Filtered reports saved to:", output_file_path)
+# import pandas as pd
+#
+# # 读取CSV文件
+# df1 = pd.read_csv('b.csv')
+# df2 = pd.read_csv('a.csv')
+#
+# # 按行对齐合并
+# df_combined = pd.concat([df1, df2], axis=1)
+#
+# # 保存合并后的数据到新的CSV文件
+# df_combined.to_csv('combined_file.csv', index=False)
+#
+# print("CSV文件已成功合并并保存为'combined_file.csv'")
+
+# import pandas as pd
+# import numpy as np
+#
+# # 读取CSV文件
+# file_path = 'c.csv'  # 替换为你的CSV文件路径
+# data = pd.read_csv(file_path)
+#
+# # 打乱数据
+# shuffled_data = data.sample(frac=1, random_state=42).reset_index(drop=True)
+#
+# # 计算分割点
+# split_point = int(len(shuffled_data) * 2 / 3)
+#
+# # 拆分数据
+# data_part1 = shuffled_data.iloc[:split_point]
+# data_part2 = shuffled_data.iloc[split_point:]
+#
+# # 保存拆分后的数据
+# data_part1.to_csv('part1.csv', index=False)
+# data_part2.to_csv('part2.csv', index=False)
+#
+# print("CSV文件已成功拆分并保存为 part1.csv 和 part2.csv")
+# import pandas as pd
+# # 读取两个 CSV 文件
+# df1 = pd.read_csv('client_1_v.csv')
+# df2 = pd.read_csv('client_2_v.csv')
+# df3 = pd.read_csv('client_3_v.csv')
+# df4 = pd.read_csv('client_4_v.csv')
+# # 合并两个数据框
+# merged_df = pd.concat([df4, df1, df2, df3])
+# # 保存合并后的数据框到新的 CSV 文件
+# merged_df.to_csv('merged_file.csv', index=False)
+# print("CSV files have been merged successfully into 'merged_file.csv'.")
+
+import pandas as pd
+
+
+df = pd.read_csv('client_4_t.csv')
+
+# 在imgpath列的每个值前添加字符串'Candid/'
+df['imgpath'] = df['imgpath'] + '.jpg'
+
+# 将修改后的数据写回到新的CSV文件
+df.to_csv('b.csv', index=False)
+
+# import pandas as pd
+#
+# # 读取CSV文件
+# df = pd.read_csv('client_4_test.csv')
+#
+# # 假设字符串列的名称是'string_column'
+# # 去掉每个字符串的最后两个字符
+# df['imgpath'] = df['imgpath'].apply(lambda x: x[:-2] if isinstance(x, str) else x)
+#
+# # 保存处理后的数据回CSV文件
+# df.to_csv('client_4_test.csv', index=False)
+#
+# print("字符串处理完成，文件已保存为 'your_file_processed.csv'")
+
+
+# import pandas as pd
+#
+# # 读取CSV文件
+# file_path = 'client_4_test.csv'  # 替换为你的CSV文件路径
+# df = pd.read_csv(file_path)
+#
+# # 假设需要修改的列名为 'column_name'
+# column_name = 'imgpath'  # 替换为你的列名
+#
+# # 在每个字符串后面加上 .jpg
+# df[column_name] = df[column_name].astype(str) + '.jpg'
+#
+# # 保存修改后的数据到新的CSV文件
+# output_file_path = 'client_4_test.csv'  # 替换为你希望保存的文件路径
+# df.to_csv(output_file_path, index=False)
+#
+# print(f"Modified CSV file has been saved to {output_file_path}")

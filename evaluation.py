@@ -97,7 +97,7 @@ def eval_personal(client_id):
         outputs2 = outputs2.mean(axis=0).reshape(1, 4)
         outputs = (outputs * 2 + outputs2) / 3
         max_index = np.argmax(outputs)
-        person_model = person_models[client_id]
+        person_model = person_models[client_ids[max_index]]
         if np.max(outputs) <= thd:
             person_model = global_model
         person_model = person_models[client_id]
@@ -134,7 +134,5 @@ def eval_global(client_id):
     print(f'global model in {client_id} its acc is {acc}')
 
 for client_id in client_ids:
-    if client_id == "client_1" or client_id == "client_2":
-        continue
     eval_personal(client_id)
     eval_global(client_id)
