@@ -173,12 +173,12 @@
 # import pandas as pd
 #
 # # 读取CSV文件
-# df = pd.read_csv('c.csv')
+# df = pd.read_csv('a.csv')
 #
 # # 筛选条件：从第5列到第10列的绝对值和为1
 # filtered_df = df[df.iloc[:, 5:10].sum(axis=1) == 1]
 #
-# filtered_df.to_csv('c.csv', index=False)
+# filtered_df.to_csv('a.csv', index=False)
 
 
 # import pandas as pd
@@ -371,7 +371,7 @@
 # import numpy as np
 #
 # # 读取CSV文件
-# file_path = 'c.csv'  # 替换为你的CSV文件路径
+# file_path = 'a.csv'  # 替换为你的CSV文件路径
 # data = pd.read_csv(file_path)
 #
 # # 打乱数据
@@ -389,28 +389,28 @@
 # data_part2.to_csv('part2.csv', index=False)
 #
 # print("CSV文件已成功拆分并保存为 part1.csv 和 part2.csv")
-# import pandas as pd
-# # 读取两个 CSV 文件
-# df1 = pd.read_csv('client_1_v.csv')
-# df2 = pd.read_csv('client_2_v.csv')
-# df3 = pd.read_csv('client_3_v.csv')
-# df4 = pd.read_csv('client_4_v.csv')
-# # 合并两个数据框
-# merged_df = pd.concat([df4, df1, df2, df3])
-# # 保存合并后的数据框到新的 CSV 文件
-# merged_df.to_csv('merged_file.csv', index=False)
-# print("CSV files have been merged successfully into 'merged_file.csv'.")
-
 import pandas as pd
+# 读取两个 CSV 文件
+df1 = pd.read_csv('client_1_v.csv')
+df2 = pd.read_csv('client_2_v.csv')
+df3 = pd.read_csv('client_3_v.csv')
+df4 = pd.read_csv('client_4_v.csv')
+# 合并两个数据框
+merged_df = pd.concat([df4, df1, df2, df3])
+# 保存合并后的数据框到新的 CSV 文件
+merged_df.to_csv('global_valid.csv', index=False)
+print("CSV files have been merged successfully into 'global_valid.csv'.")
 
-
-df = pd.read_csv('client_4_t.csv')
-
-# 在imgpath列的每个值前添加字符串'Candid/'
-df['imgpath'] = df['imgpath'] + '.jpg'
-
-# 将修改后的数据写回到新的CSV文件
-df.to_csv('b.csv', index=False)
+# import pandas as pd
+#
+#
+# df = pd.read_csv('client_4_t.csv')
+#
+# # 在imgpath列的每个值前添加字符串'Candid/'
+# df['imgpath'] = df['imgpath'] + '.jpg'
+#
+# # 将修改后的数据写回到新的CSV文件
+# df.to_csv('b.csv', index=False)
 
 # import pandas as pd
 #
