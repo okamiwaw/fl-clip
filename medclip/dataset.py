@@ -411,10 +411,8 @@ class ZeroShotImageDataset(Dataset):
             filename = f'{self.datalist_path}/global_valid.csv'
         else:
             filename = f'{self.datalist_path}/{data_type}_v.csv'
-        df = pd.read_csv(filename, index_col=0)
-        df_list.append(df)
-        self.df = pd.concat(df_list, axis=0).reset_index(drop=True)
-
+        df = pd.read_csv(filename)
+        self.df = df
     def __getitem__(self, index):
         row = self.df.iloc[index]
         img = Image.open(self.dataset_path + '/' + row.imgpath)

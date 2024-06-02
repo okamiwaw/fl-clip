@@ -128,7 +128,7 @@ class Runner:
                                 select_dict_text=server.select_model_text.state_dict(),
                                 select_label=clients_label[client_id]
                                 )
-                client.select_train()
+                # client.select_train()
                 diff_select_image = client.compute_diff(server.select_model_image, "select_image")
                 diff_select_text = client.compute_diff(server.select_model_text, "select_text")
                 server.receive(client_id=client_id,

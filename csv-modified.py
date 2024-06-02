@@ -255,18 +255,18 @@
 # import numpy as np
 #
 # # 读取CSV文件
-# df = pd.read_csv('client_1_t.csv')
+# df = pd.read_csv('client_4_t.csv')
 #
 # # 确保你的数据行数足够抽取5000项
 # if len(df) < 6000:
 #     raise ValueError("数据项不足6000，无法抽取。")
 #
 # # 随机抽取5000项
-# random_indices = np.random.choice(df.index, size=5000, replace=False)
+# random_indices = np.random.choice(df.index, size=8000, replace=False)
 # sampled_df = df.loc[random_indices]
 #
 # # 保存到新的CSV文件
-# sampled_df.to_csv('client_1_t.csv', index=False)
+# sampled_df.to_csv('client_4_t.csv', index=False)
 # import pandas as pd
 #
 # # 读取CSV文件
@@ -389,17 +389,17 @@
 # data_part2.to_csv('part2.csv', index=False)
 #
 # print("CSV文件已成功拆分并保存为 part1.csv 和 part2.csv")
-import pandas as pd
-# 读取两个 CSV 文件
-df1 = pd.read_csv('client_1_v.csv')
-df2 = pd.read_csv('client_2_v.csv')
-df3 = pd.read_csv('client_3_v.csv')
-df4 = pd.read_csv('client_4_v.csv')
-# 合并两个数据框
-merged_df = pd.concat([df4, df1, df2, df3])
-# 保存合并后的数据框到新的 CSV 文件
-merged_df.to_csv('global_valid.csv', index=False)
-print("CSV files have been merged successfully into 'global_valid.csv'.")
+# import pandas as pd
+# # 读取两个 CSV 文件
+# df1 = pd.read_csv('client_1_v.csv')
+# df2 = pd.read_csv('client_2_v.csv')
+# df3 = pd.read_csv('client_3_v.csv')
+# df4 = pd.read_csv('client_4_v.csv')
+# # 合并两个数据框
+# merged_df = pd.concat([df4, df1, df2, df3])
+# # 保存合并后的数据框到新的 CSV 文件
+# merged_df.to_csv('global_valid.csv', index=False)
+# print("CSV files have been merged successfully into 'global_valid.csv'.")
 
 # import pandas as pd
 #
@@ -444,3 +444,17 @@ print("CSV files have been merged successfully into 'global_valid.csv'.")
 # df.to_csv(output_file_path, index=False)
 #
 # print(f"Modified CSV file has been saved to {output_file_path}")
+import pandas as pd
+
+# 读取CSV文件
+file_path = 'client_1_v.csv'  # 请将此处替换为你的CSV文件路径
+df = pd.read_csv(file_path)
+
+# 替换imgpath列中的字符串
+df['imgpath'] = df['imgpath'].str.replace('CheXpert-v1.0', 'CheXpert-v1.0-small')
+
+# 保存修改后的数据到新的CSV文件
+new_file_path = 'client_1_v.csv'  # 请将此处替换为你希望保存的新CSV文件路径
+df.to_csv(new_file_path, index=False)
+
+print("替换完成并保存到新文件。")
