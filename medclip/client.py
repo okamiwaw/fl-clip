@@ -87,7 +87,7 @@ class Client:
 
     def person_train(self):
         print("personal model training starts")
-        loss_model = ImageTextContrastiveLoss(self.person_model).to("cuda:1”)
+        loss_model = ImageTextContrastiveLoss(self.person_model).to("cuda:1")
         optimizer = optim.Adam(loss_model.parameters(), lr=self.textvision_lr)
         progress_bar = tqdm(enumerate(self.train_loader), total=len(self.train_loader), leave=True)
         scaler = GradScaler()
