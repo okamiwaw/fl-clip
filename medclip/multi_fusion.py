@@ -13,6 +13,8 @@ class TextModel(nn.Module):
         super(TextModel, self).__init__()
         self.model = AutoModel.from_pretrained(model_name, output_hidden_states=True)
         self.tokenizer = AutoModel.from_pretrained(model_name)
+        for param in self.model.parameters():
+            param.requires_grad = False
     def forward(self, input_ids, attention_mask):
         outputs = self.model(input_ids=input_ids, attention_mask=attention_mask)
         # Use the last hidden state which has the shape [batch_size, sequence_length, hidden_size]
@@ -24,6 +26,8 @@ class ImageModel(nn.Module):
         super(ImageModel, self).__init__()
         self.vit_type = constants.VIT_TYPE
         self.model = AutoModel.from_pretrained(self.vit_type)
+        for param in self.model.parameters():
+            param.requires_grad = False
     def forward(self, pixel):
         output = self.model(pixel)
         return output['pooler_output']
