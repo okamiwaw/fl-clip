@@ -9,6 +9,7 @@ from torchvision import transforms
 
 from medclip import constants, MedCLIPModel, MedCLIPVisionModelViT, PromptClassifier
 from medclip.client import Client
+from medclip.multi_fusion import MLPFusion_Mdoel
 from medclip.prompts import generate_chexpert_class_prompts
 from medclip.sever import Server
 from medclip.dataset import ImageTextContrastiveDataset, ImageTextContrastiveCollator, ZeroShotImageDataset, \
@@ -92,15 +93,11 @@ class Runner:
         self.rounds = constants.ROUNDS
         client_nums = constants.SELECT_NUM
         global_model = MedCLIPModel(vision_cls=MedCLIPVisionModelViT)
-        select_model_image = vgg11(
-            num_classes=client_nums
-        )
-        select_model_text = Bert_Classifier(
+        select_model = MLPFusion_Mdoel(
             num_classes=client_nums
         )
         self.server = Server(global_model=global_model,
-                             select_model_image=select_model_image,
-                             select_model_text=select_model_text,
+                             select_model=select_model,
                              client_ids=self.client_ids)
 
     def train(self):
@@ -124,69 +121,45 @@ class Runner:
                                 log_file=log_file,
                                 local_dict=server.global_model.state_dict(),
                                 person_dict=server.person_models[client_id].state_dict(),
-                                select_dict_image=server.select_model_image.state_dict(),
-                                select_dict_text=server.select_model_text.state_dict(),
+                                select_dict=server.select_model.state_dict(),
                                 select_label=clients_label[client_id]
                                 )
-                # client.select_train()
-                diff_select_image = client.compute_diff(server.select_model_image, "select_image")
-                diff_select_text = client.compute_diff(server.select_model_text, "select_text")
+                client.select_train()
+                diff_select = client.compute_diff(server.select_model, "select")
                 server.receive(client_id=client_id,
-                               model=diff_select_image,
-                               model_type="select_image"
-                               )
-                server.receive(client_id=client_id,
-                               model=diff_select_text,
-                               model_type="select_text"
+                               model=diff_select,
+                               model_type="select_model"
                                )
             server.aggregate()
-            select_model_image = server.select_model_image.to("cuda:0")
-            select_model_text = server.select_model_text.to("cuda:0")
-            select_model_image.eval()
-            select_model_text.eval()
+            select_model = server.select_model.to("cuda:0")
+            select_model.eval()
             with torch.no_grad():
-                metric1 = 0
-                metric2 = 0
+                metric = 0
                 for i, batch_data in enumerate(val_global):
                     # input and expected output
-                    images = batch_data["pixel_values"].to("cuda:0")
+                    pixel = batch_data["pixel_values"].to("cuda:0")
                     client_ids = batch_data["clients"]
                     label_mapping = [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]
                     select_labels = [label_mapping[client_id] for client_id in client_ids]
-                    labels = np.ones((images.shape[0], 1)) * select_labels
-                    outputs_image = select_model_image(images)
+                    labels = np.ones((pixel.shape[0], 1)) * select_labels
                     input_ids = batch_data["input_ids"].to("cuda:0")
                     attention_mask = batch_data["attention_mask"].to("cuda:0")
-                    outputs_text = select_model_text(input_ids, attention_mask)
+                    outputs = select_model(pixel, input_ids, attention_mask)
                     labels = labels.argmax(1)
-                    pred1 = outputs_image.argmax(1).cpu().numpy()
-                    pred2 = outputs_text.argmax(1).cpu().numpy()
-                    acc1 = (pred1 == labels).mean()
-                    acc2 = (pred2 == labels).mean()
-                    metric1 += acc1
-                    metric2 += acc2
-                metric1 /= len(val_global)
-                metric2 /= len(val_global)
-                log_metric(r, 'image', metric1)
-                log_metric(r, 'text', metric2)
-                print(f"select model_image acc is {metric1}")
-                print(f"select model_text acc is {metric2}")
-            if metric1 > select_image_acc:
-                select_image_acc = metric1
-                print(f'metric1:{select_image_acc}')
+                    pred = outputs.argmax(1).cpu().numpy()
+                    acc = (pred == labels).mean()
+                    metric += acc
+                metric /= len(val_global)
+                log_metric(r, 'select', metric)
+                print(f"select model acc is {metric}")
+            if metric > select_image_acc:
+                select_acc = metric
+                print(f'metric:{select_acc}')
                 save_dir = f'outputs/models/best'
                 os.makedirs(save_dir, exist_ok=True)
-                select_path = os.path.join(save_dir, "select_model_image.pth")
-                torch.save(server.select_model_image.state_dict(), select_path)
-            if metric2 > select_text_acc:
-                select_text_acc = metric2
-                print(f'metric2:{select_text_acc}')
-                save_dir = f'outputs/models/best'
-                os.makedirs(save_dir, exist_ok=True)
-                select_path = os.path.join(save_dir, "select_model_text.pth")
-                torch.save(server.select_model_text.state_dict(), select_path)
-            select_model_image.to("cpu")
-            select_model_text.to("cpu")
+                select_path = os.path.join(save_dir, "select_model.pth")
+                torch.save(server.select_model.state_dict(), select_path)
+            select_model.to("cpu")
 
 
 def main():

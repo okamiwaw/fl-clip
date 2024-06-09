@@ -11,6 +11,7 @@ from transformers import AutoModelForSequenceClassification
 from medclip import MedCLIPModel, MedCLIPVisionModelViT, constants, PromptClassifier, MedCLIPProcessor
 from medclip.evaluator import Evaluator
 from medclip.losses import ImageTextContrastiveLoss
+from medclip.multi_fusion import MLPFusion_Mdoel
 from medclip.select_model import vgg11
 from medclip.select_model import Bert_Classifier
 
@@ -26,8 +27,7 @@ class Client:
                  epochs=1,
                  local_dict=None,
                  person_dict=None,
-                 select_dict_image=None,
-                 select_dict_text=None,
+                 select_dict=None,
                  select_label=None,
                  log_file=None
                  ):
@@ -41,11 +41,8 @@ class Client:
         self.val_person = val_person
         self.val_global = val_global
         self.local_model = MedCLIPModel(vision_cls=MedCLIPVisionModelViT).to("cuda:0")
-        self.person_model = MedCLIPModel(vision_cls=MedCLIPVisionModelViT).to("cuda:1")
-        self.select_model_image = vgg11(
-            num_classes=constants.SELECT_NUM
-        ).to("cuda:0")
-        self.select_model_text = Bert_Classifier(num_classes=constants.SELECT_NUM).to("cuda:0")
+        self.person_model = MedCLIPModel(vision_cls=MedCLIPVisionModelViT).to("cuda:0")
+        self.select_model = MLPFusion_Mdoel(num_classes=constants.SELECT_NUM).to("cuda:0")
         self.textvision_lr = constants.VIT_BERT_LEARNING_RATE
         self.weight_decay = constants.WEIGHT_DECAY
         self.select_lr = constants.SELECT_MODEL_LEARNING_RATE
@@ -53,10 +50,9 @@ class Client:
             self.local_model.load_state_dict(copy.deepcopy(local_dict))
         if person_dict is not None:
             self.person_model.load_state_dict(copy.deepcopy(person_dict))
-        if select_dict_image is not None:
-            self.select_model_image.load_state_dict(copy.deepcopy(select_dict_image))
-        if select_dict_text is not None:
-            self.select_model_text.load_state_dict(copy.deepcopy(select_dict_text))
+        if select_dict is not None:
+            self.select_model.load_state_dict(copy.deepcopy(select_dict))
+
 
     def log_metric(self, client, task, acc):
         log_file = self.log_file
@@ -87,7 +83,7 @@ class Client:
 
     def person_train(self):
         print("personal model training starts")
-        loss_model = ImageTextContrastiveLoss(self.person_model).to("cuda:1")
+        loss_model = ImageTextContrastiveLoss(self.person_model).to("cuda:0")
         optimizer = optim.Adam(loss_model.parameters(), lr=self.textvision_lr)
         progress_bar = tqdm(enumerate(self.train_loader), total=len(self.train_loader), leave=True)
         scaler = GradScaler()
@@ -104,44 +100,67 @@ class Client:
             scaler.update()
             progress_bar.set_postfix({"loss": loss.item()})
 
+    # def select_train(self):
+    #     select_label = self.select_label
+    #     print("select model training starts")
+    #     criterion = torch.nn.CrossEntropyLoss()
+    #     optimizer_image = optim.AdamW(self.select_model_image.parameters(), lr=self.select_lr,
+    #                                   weight_decay=self.weight_decay)
+    #     progress_bar = tqdm(enumerate(self.train_loader), total=len(self.train_loader), leave=True)
+    #     scaler = GradScaler()
+    #     for i, batch_data in progress_bar:
+    #         optimizer_image.zero_grad()
+    #         with autocast():
+    #             inputs = batch_data["pixel_values"].to("cuda:0")
+    #             labels = np.ones((inputs.shape[0], 1)) * select_label
+    #             labels = torch.tensor(labels).to("cuda:0")
+    #             outputs = self.select_model_image(inputs)
+    #             loss = criterion(outputs, labels)
+    #         scaler.scale(loss).backward()
+    #         scaler.step(optimizer_image)
+    #         scaler.update()
+    #         progress_bar.set_postfix({"loss": loss.item()})
+    #     optimizer_text = optim.AdamW(self.select_model_text.parameters(), lr=self.select_lr,
+    #                                  weight_decay=self.weight_decay)
+    #     progress_bar = tqdm(enumerate(self.train_loader), total=len(self.train_loader), leave=True)
+    #     scaler = GradScaler()
+    #     for i, batch_data in progress_bar:
+    #         optimizer_text.zero_grad()
+    #         with autocast():
+    #             input_ids = batch_data["input_ids"].to("cuda:0")
+    #             attention_mask = batch_data["attention_mask"].to("cuda:0")
+    #             labels = np.ones((input_ids.shape[0], 1)) * select_label
+    #             labels = torch.tensor(labels).to("cuda:0")
+    #             outputs = self.select_model_text(input_ids, attention_mask)
+    #             loss = criterion(outputs, labels)
+    #         scaler.scale(loss).backward()
+    #         scaler.step(optimizer_text)
+    #         scaler.update()
+    #         progress_bar.set_postfix({"loss": loss.item()})
     def select_train(self):
         select_label = self.select_label
         print("select model training starts")
         criterion = torch.nn.CrossEntropyLoss()
-        optimizer_image = optim.AdamW(self.select_model_image.parameters(), lr=self.select_lr,
+        optimizer_image = optim.AdamW(self.select_model.parameters(), lr=self.select_lr,
                                       weight_decay=self.weight_decay)
         progress_bar = tqdm(enumerate(self.train_loader), total=len(self.train_loader), leave=True)
         scaler = GradScaler()
         for i, batch_data in progress_bar:
             optimizer_image.zero_grad()
             with autocast():
-                inputs = batch_data["pixel_values"].to("cuda:0")
-                labels = np.ones((inputs.shape[0], 1)) * select_label
+                pixel = batch_data["pixel_values"].to("cuda:0")
+                input_ids = batch_data["input_ids"].to("cuda:0")
+                attention_mask = batch_data["attention_mask"].to("cuda:0")
+                labels = np.ones((pixel.shape[0], 1)) * select_label
                 labels = torch.tensor(labels).to("cuda:0")
-                outputs = self.select_model_image(inputs)
+                outputs = self.select_model(pixel=pixel,
+                                            input_ids=input_ids,
+                                            attention_mask=attention_mask)
                 loss = criterion(outputs, labels)
             scaler.scale(loss).backward()
             scaler.step(optimizer_image)
             scaler.update()
             progress_bar.set_postfix({"loss": loss.item()})
-        optimizer_text = optim.AdamW(self.select_model_text.parameters(), lr=self.select_lr,
-                                     weight_decay=self.weight_decay)
-        progress_bar = tqdm(enumerate(self.train_loader), total=len(self.train_loader), leave=True)
-        scaler = GradScaler()
-        for i, batch_data in progress_bar:
-            optimizer_text.zero_grad()
-            with autocast():
-                input_ids = batch_data["input_ids"].to("cuda:0")
-                attention_mask = batch_data["attention_mask"].to("cuda:0")
-                labels = np.ones((input_ids.shape[0], 1)) * select_label
-                labels = torch.tensor(labels).to("cuda:0")
-                outputs = self.select_model_text(input_ids, attention_mask)
-                loss = criterion(outputs, labels)
-            scaler.scale(loss).backward()
-            scaler.step(optimizer_text)
-            scaler.update()
-            progress_bar.set_postfix({"loss": loss.item()})
-
     def compute_diff(self, model, model_type):
         global_dict = model.to("cpu").state_dict()
         diff_dict = {}
@@ -149,12 +168,8 @@ class Client:
             local_dict = self.local_model.to("cpu").state_dict()
             for key in global_dict.keys():
                 diff_dict[key] = local_dict[key] - global_dict[key]
-        elif model_type == "select_image":
-            local_dict = self.select_model_image.to("cpu").state_dict()
-            for key in global_dict.keys():
-                diff_dict[key] = local_dict[key] - global_dict[key]
-        elif model_type == "select_text":
-            local_dict = self.select_model_text.to("cpu").state_dict()
+        elif model_type == "select":
+            local_dict = self.select_model.to("cpu").state_dict()
             for key in global_dict.keys():
                 diff_dict[key] = local_dict[key] - global_dict[key]
         return diff_dict

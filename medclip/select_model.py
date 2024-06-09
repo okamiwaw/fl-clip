@@ -15,7 +15,6 @@
 
 from typing import Any, Dict, List, Union, cast
 from transformers import BertModel, BertTokenizer
-import torch.nn as nn
 import torch.optim as optim
 import torch
 import torch.nn as nn

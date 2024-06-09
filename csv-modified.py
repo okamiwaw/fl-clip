@@ -444,17 +444,4 @@
 # df.to_csv(output_file_path, index=False)
 #
 # print(f"Modified CSV file has been saved to {output_file_path}")
-import pandas as pd
 
-# 读取CSV文件
-file_path = 'client_1_v.csv'  # 请将此处替换为你的CSV文件路径
-df = pd.read_csv(file_path)
-
-# 替换imgpath列中的字符串
-df['imgpath'] = df['imgpath'].str.replace('CheXpert-v1.0', 'CheXpert-v1.0-small')
-
-# 保存修改后的数据到新的CSV文件
-new_file_path = 'client_1_v.csv'  # 请将此处替换为你希望保存的新CSV文件路径
-df.to_csv(new_file_path, index=False)
-
-print("替换完成并保存到新文件。")
