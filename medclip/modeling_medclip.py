@@ -249,16 +249,16 @@ class PromptClassifier(nn.Module):
         self.model = medclip_model
         self.ensemble = ensemble
 
-    def forward(self, pixel_values=None, prompt_inputs=None, **kwargs):
+    def forward(self, pixel_value=None, prompt_input=None, **kwargs):
         '''take image pixel values (after transform) and prompt_inputs
         (a dict of {'class1':{'input_ids':...,'attention_mask':,...}), 'class2':...}
         '''
         device = next(self.parameters()).device
-        pixel_values = pixel_values.to(device)
+        pixel_value = pixel_value.to(device)
         class_similarities = []
         class_names = []
-        for cls_name, cls_text in prompt_inputs.items():
-            inputs = {'pixel_values':pixel_values}
+        for cls_name, cls_text in prompt_input.items():
+            inputs = {'pixel_values':pixel_value}
             for k in cls_text.keys(): inputs[k] = cls_text[k].to(device)
 
             with torch.no_grad():

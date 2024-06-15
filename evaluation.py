@@ -122,7 +122,9 @@ def eval_global(client_id):
     labels = torch.cat(label_list).cpu().detach().numpy()
     pred = pred_list.cpu().detach().numpy()
     pred_label = pred.argmax(1)
-    acc = (pred_label == labels).mean()
+    labels = np.argmax(labels, axis=1)
+    labels = labels.tolist()
+    acc = sum(x == y for x, y in zip(pred_label, labels)) / len(labels)
     print(f'global model in {client_id} its acc is {acc}')
 
 for i in range(10):
