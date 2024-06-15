@@ -108,7 +108,7 @@ def eval_personal(client_id):
     print(f'personal model in {client_id} its acc is {acc}')
 
 def eval_global(client_id):
-    val_data = get_valid_dataloader(client_id)
+    val_data = get_valid_dataloader(client_id,"test")
     pred_list = []
     label_list = []
     for i, batch_data in enumerate(val_data):
