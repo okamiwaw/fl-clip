@@ -71,8 +71,6 @@ if __name__ == '__main__':
     # build medclip model
     model = MedCLIPModel(vision_cls=MedCLIPVisionModelViT)
     model.cuda()
-
-    # build evaluator
     cls_prompts = generate_chexpert_class_prompts(n=10)
     val_data = ZeroShotImageDataset(['chexpert-5x200-val'],
         class_names=constants.CHEXPERT_COMPETITION_TASKS)

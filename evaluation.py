@@ -8,6 +8,7 @@ from torchvision import transforms
 
 from medclip import constants, MedCLIPModel, MedCLIPVisionModelViT, PromptClassifier
 from medclip.client import Client
+from medclip.multi_fusion import MLPFusion_Mdoel
 from medclip.prompts import generate_chexpert_class_prompts
 from medclip.sever import Server
 from medclip.dataset import ImageTextContrastiveDataset, ImageTextContrastiveCollator, ZeroShotImageDataset, \
@@ -22,13 +23,14 @@ def softmax(x):
     return e_x / e_x.sum(axis=0)  # the sum is computed along the only axis (axis=0)
 
 
-def get_valid_dataloader(data_type):
+def get_valid_dataloader(client, data_type):
     dataset_path = constants.DATASET_PATH
     datalist_path = constants.DATALIST_PATH
     cls_prompts = generate_chexpert_class_prompts(n=10)
     val_data = ZeroShotImageDataset(class_names=constants.CHEXPERT_COMPETITION_TASKS,
                                     dataset_path=dataset_path,
                                     datalist_path=datalist_path,
+                                    client=client,
                                     data_type=data_type)
     val_collate_fn = ZeroShotImageCollator(cls_prompts=cls_prompts,
                                            mode='multiclass')
@@ -43,21 +45,14 @@ def get_valid_dataloader(data_type):
 
 
 global_model = MedCLIPModel(vision_cls=MedCLIPVisionModelViT)
-select_model_image = vgg11(
-    num_classes=constants.SELECT_NUM
-)
-select_model_text = Bert_Classifier(num_classes=constants.SELECT_NUM)
-select_image_dict = torch.load('./outputs/models/best/select_model_image.pth', map_location=torch.device('cuda:0'))
-select_text_dict = torch.load('./outputs/models/best/select_model_text.pth', map_location=torch.device('cuda:0'))
-select_model_image.load_state_dict(select_image_dict)
-select_model_text.load_state_dict(select_text_dict)
-select_model_image.to("cuda:0")
-select_model_text.to("cuda:0")
+select_model = MLPFusion_Mdoel(num_classes=constants.SELECT_NUM)
+select_dict = torch.load('./outputs/models/best/select_model.pth', map_location=torch.device('cuda:0'))
+select_model.load_state_dict(select_dict)
+select_model.to("cuda:0")
 global_dict = torch.load('./outputs/models/best_model/global_model.pth', map_location=torch.device('cuda:0'))
 global_model.load_state_dict(global_dict)
-
 thd = constants.THRESHOLD
-client_ids = ["client_1", "client_2", "client_3", "client_4"]
+client_ids = [ "client_1", "client_2","client_3", "client_4"]
 person_models = {}
 for client_id in client_ids:
     person_dict = torch.load(f'./outputs/models/best_model/person_model_{client_id}.pth',
@@ -72,8 +67,8 @@ for client_id in client_ids:
 
 
 def eval_personal(client_id):
-    val_data = get_valid_dataloader(client_id)
-    pred_list = []
+    val_data = get_valid_dataloader(client_id, "test")
+    pred_label = []
     label_list = []
     tasks = [
         "Atelectasis",
@@ -82,41 +77,38 @@ def eval_personal(client_id):
         "Edema",
         "Pleural Effusion",
     ]
+    cnt = 0
     for i, batch_data in enumerate(val_data):
-        image = batch_data["pixel_values"].to("cuda:0")
-        outputs = select_model_image(image).cpu().detach().numpy()
-        outputs = softmax(outputs)
-        outputs2 = np.empty((1, 4))
+        pixel = batch_data["pixel_value"].to("cuda:0")
+        logits = []
+        report_ids = batch_data["report"]["input_ids"].to("cuda:0")
+        report_mask = batch_data["report"]["attention_mask"].to("cuda:0")
         for task in tasks:
-            input_ids = batch_data["prompt_inputs"][task]["input_ids"].to("cuda:0")
-            attention_mask = batch_data["prompt_inputs"][task]["attention_mask"].to("cuda:0")
-            if np.size(outputs2):
-                outputs2 = select_model_text(input_ids, attention_mask).cpu().detach().numpy()
-            else:
-                outputs2 += select_model_text(input_ids, attention_mask).cpu().detach().numpy()
-        outputs2 = outputs2.mean(axis=0).reshape(1, 4)
-        outputs = (outputs * 2 + outputs2) / 3
-        max_index = np.argmax(outputs)
-        person_model = person_models[client_ids[max_index]]
-        if np.max(outputs) <= thd:
-            person_model = global_model
-        person_model = person_models[client_id]
-        medclip_clf = PromptClassifier(person_model)
-        medclip_clf.eval()
-        output = medclip_clf(**batch_data)
-        pred = output['logits'].to("cuda:0")
-        pred_list.append(pred)
-        label_list.append(batch_data['labels'])
-    pred_list = torch.cat(pred_list, 0)
+            input_ids = batch_data["prompt_input"][task]["input_ids"].view(1, -1).to("cuda:0")
+            attention_mask = batch_data["prompt_input"][task]["attention_mask"].view(1, -1).to("cuda:0")
+            outputs = select_model(pixel, report_ids, report_mask).cpu().detach().numpy()
+            max_index = np.argmax(outputs)
+            person_model = person_models[client_ids[max_index]]
+            if np.max(outputs) <= thd:
+                person_model = global_model
+            person_model =  person_models[client_id]
+            inputs={"input_ids":input_ids,
+                    "attention_mask":attention_mask,
+                    "pixel_values":pixel}
+            medclip_outputs = person_model(**inputs)
+            logit = medclip_outputs['logits'].cpu().detach().numpy()
+            logits.append(logit)
+        pred = np.argmax(logits)
+        pred_label.append(pred)
+        label_list.append(batch_data['label'])
     labels = torch.cat(label_list).cpu().detach().numpy()
-    pred = pred_list.cpu().detach().numpy()
-    pred_label = pred.argmax(1)
-    acc = (pred_label == labels).mean()
+    labels = np.argmax(labels, axis=1)
+    labels = labels.tolist()
+    acc = sum(x == y for x, y in zip(pred_label, labels)) / len(labels)
     print(f'personal model in {client_id} its acc is {acc}')
 
 def eval_global(client_id):
     val_data = get_valid_dataloader(client_id)
-    global_model = person_models[client_id]
     pred_list = []
     label_list = []
     for i, batch_data in enumerate(val_data):
@@ -125,7 +117,7 @@ def eval_global(client_id):
         outputs = medclip_clf(**batch_data)
         pred = outputs['logits'].to("cuda:0")
         pred_list.append(pred)
-        label_list.append(batch_data['labels'])
+        label_list.append(batch_data['label'])
     pred_list = torch.cat(pred_list, 0)
     labels = torch.cat(label_list).cpu().detach().numpy()
     pred = pred_list.cpu().detach().numpy()
@@ -133,6 +125,8 @@ def eval_global(client_id):
     acc = (pred_label == labels).mean()
     print(f'global model in {client_id} its acc is {acc}')
 
-for client_id in client_ids:
-    eval_personal(client_id)
-    eval_global(client_id)
+for i in range(10):
+    print(f"round: {i}")
+    for client_id in client_ids:
+        eval_personal(client_id)
+        eval_global(client_id)

@@ -384,7 +384,8 @@ class ZeroShotImageDataset(Dataset):
                  imgtransform=None,
                  dataset_path=None,
                  datalist_path=None,
-                 data_type=None
+                 data_type=None,
+                 client = None
                  ) -> None:
         '''
         args:
@@ -409,8 +410,10 @@ class ZeroShotImageDataset(Dataset):
         df_list = []
         if data_type == 'global':
             filename = f'{self.datalist_path}/global_valid.csv'
+        elif data_type == 'test':
+            filename = f'{self.datalist_path}/{client}_test.csv'
         else:
-            filename = f'{self.datalist_path}/{data_type}_v.csv'
+            filename = f'{self.datalist_path}/{client}_v.csv'
         df = pd.read_csv(filename)
         self.df = df
     def __getitem__(self, index):
@@ -420,7 +423,8 @@ class ZeroShotImageDataset(Dataset):
         img = self.transform(img).unsqueeze(1)
         label = pd.DataFrame(row[self.class_names]).transpose()
         client = row.client
-        return img, label, client
+        report = row.report
+        return img, label, client,report
 
     def _pad_img(self, img, min_size=224, fill_color=0):
         '''pad img to square.
@@ -436,7 +440,7 @@ class ZeroShotImageDataset(Dataset):
 
 
 class ZeroShotImageCollator:
-    def __init__(self, mode, cls_prompts=None, n_prompt=5):
+    def __init__(self, mode, cls_prompts=None, n_prompt=10):
         # initialize tokenizer
         self.tokenizer = AutoTokenizer.from_pretrained(constants.BERT_TYPE, local_files_only=True)
         self.tokenizer.model_max_length = 77
@@ -454,23 +458,20 @@ class ZeroShotImageCollator:
     def __call__(self, batch):
         inputs = defaultdict(list)
         for data in batch:
-            inputs['pixel_values'].append(data[0])
-            inputs['labels'].append(data[1])
-            inputs['clients'].append(data[2])
-
-        inputs['labels'] = pd.concat(inputs['labels']).astype(int).values
-        if self.mode in ['multiclass', 'binary']:
-            inputs['labels'] = torch.tensor(inputs['labels'].argmax(1), dtype=int)
-        else:
-            inputs['labels'] = torch.tensor(inputs['labels'], dtype=float)
-
-        inputs['pixel_values'] = torch.cat(inputs['pixel_values'], 0)
-        if inputs['pixel_values'].shape[1] == 1: inputs['pixel_values'] = inputs['pixel_values'].repeat((1, 3, 1, 1))
+            pixel_value = data[0]
+            label = data[1]
+            client = data[2]
+            report = data[3]
+        if pixel_value.shape[1] == 1: pixel_value = pixel_value.repeat((1, 3, 1, 1))
+        label = list(label.values)
+        label = torch.tensor(label, dtype=float)
+        text_input = self.tokenizer(report, truncation=True, padding=True, return_tensors='pt')
         return {
-            'pixel_values': inputs['pixel_values'],
-            'prompt_inputs': self.prompt_texts_inputs,
-            'labels': inputs['labels'],
-            'clients':inputs['clients']
+            'pixel_value': pixel_value,
+            'prompt_input': self.prompt_texts_inputs,
+            'label': label,
+            'client': client,
+            'report': text_input,
         }
 
 

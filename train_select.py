@@ -138,12 +138,12 @@ class Runner:
                 for i, batch_data in enumerate(val_global):
                     # input and expected output
                     pixel = batch_data["pixel_values"].to("cuda:0")
+                    input_ids = batch_data["input_ids"].to("cuda:0")
+                    attention_mask = batch_data["attention_mask"].to("cuda:0")
                     client_ids = batch_data["clients"]
                     label_mapping = [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]
                     select_labels = [label_mapping[client_id] for client_id in client_ids]
                     labels = np.ones((pixel.shape[0], 1)) * select_labels
-                    input_ids = batch_data["input_ids"].to("cuda:0")
-                    attention_mask = batch_data["attention_mask"].to("cuda:0")
                     outputs = select_model(pixel, input_ids, attention_mask)
                     labels = labels.argmax(1)
                     pred = outputs.argmax(1).cpu().numpy()
