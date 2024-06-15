@@ -91,7 +91,6 @@ def eval_personal(client_id):
             person_model = person_models[client_ids[max_index]]
             if np.max(outputs) <= thd:
                 person_model = global_model
-            person_model =  person_models[client_id]
             inputs={"input_ids":input_ids,
                     "attention_mask":attention_mask,
                     "pixel_values":pixel}
@@ -130,5 +129,6 @@ def eval_global(client_id):
 for i in range(10):
     print(f"round: {i}")
     for client_id in client_ids:
-        eval_personal(client_id)
-        eval_global(client_id)
+        if client_id == "client_3" or client_id == "client_4":
+            eval_personal(client_id)
+            eval_global(client_id)
