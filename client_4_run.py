@@ -36,14 +36,15 @@ def get_train_dataloader(client_id):
                                   num_workers=2,
                                   )
     return train_dataloader
-def get_valid_dataloader(data_type):
+def get_valid_dataloader(client_id, data_type):
     dataset_path = constants.DATASET_PATH
     datalist_path = constants.DATALIST_PATH
     cls_prompts = generate_chexpert_class_prompts(n=10)
     val_data = ZeroShotImageDataset(class_names=constants.CHEXPERT_COMPETITION_TASKS,
                                     dataset_path=dataset_path,
                                     datalist_path=datalist_path,
-                                    data_type=data_type)
+                                    data_type=data_type,
+                                    client=client_id)
     val_collate_fn = ZeroShotImageCollator(cls_prompts=cls_prompts,
                                            mode='multiclass')
     val_dataloader = DataLoader(val_data,
@@ -65,8 +66,8 @@ os.environ['TOKENIZERS_PARALLELISM'] = 'false'
 client_id = "client_4"
 best_acc = 0
 log_file = constants.LOGFILE
-train_dataloader = get_train_dataloader(client_id)
-val_person = get_valid_dataloader(client_id)
+train_dataloader = get_train_dataloader(client_id, )
+val_person = get_valid_dataloader(client_id, "valid")
 global_model = MedCLIPModel(vision_cls=MedCLIPVisionModelViT)
 client = Client(client_id=client_id,
                 train_dataloader=train_dataloader,
@@ -86,7 +87,7 @@ for r in range(100):
     scores = evaluator.evaluate()
     metric = scores['acc']
     print(f"local model acc is {metric}")
-    log_file = "./outputs/log/client_4.txt"
+    log_file = "./outputs/log/client_2.txt"
     folder_path = os.path.dirname(log_file)
     if not os.path.exists(folder_path):
         os.makedirs(folder_path)
@@ -96,3 +97,4 @@ for r in range(100):
         best_acc = metric
         save_path = f'./outputs/models/best/{client_id}.pth'
         torch.save(client.local_model.state_dict(), save_path)
+

@@ -33,16 +33,17 @@ def get_train_dataloader(client_id):
                                   collate_fn=train_collate_fn,
                                   shuffle=True,
                                   pin_memory=True,
-                                  num_workers=2,
+                                  num_workers=0,
                                   )
     return train_dataloader
-def get_valid_dataloader(data_type):
+def get_valid_dataloader(client_id, data_type):
     dataset_path = constants.DATASET_PATH
     datalist_path = constants.DATALIST_PATH
     cls_prompts = generate_chexpert_class_prompts(n=10)
     val_data = ZeroShotImageDataset(class_names=constants.CHEXPERT_COMPETITION_TASKS,
                                     dataset_path=dataset_path,
                                     datalist_path=datalist_path,
+                                    client=client_id,
                                     data_type=data_type)
     val_collate_fn = ZeroShotImageCollator(cls_prompts=cls_prompts,
                                            mode='multiclass')
@@ -51,7 +52,7 @@ def get_valid_dataloader(data_type):
                                 collate_fn=val_collate_fn,
                                 shuffle=False,
                                 pin_memory=True,
-                                num_workers=2,
+                                num_workers=0,
                                 )
     return val_dataloader
 
@@ -66,7 +67,7 @@ client_id = "client_1"
 best_acc = 0
 log_file = constants.LOGFILE
 train_dataloader = get_train_dataloader(client_id)
-val_person = get_valid_dataloader(client_id)
+val_person = get_valid_dataloader(client_id,"valid")
 global_model = MedCLIPModel(vision_cls=MedCLIPVisionModelViT)
 client = Client(client_id=client_id,
                 train_dataloader=train_dataloader,
