@@ -103,7 +103,7 @@ def eval_personal(client_id):
     labels = labels.tolist()
     acc = sum(x == y for x, y in zip(pred_label, labels)) / len(labels)
     print(f'personal model in {client_id} its acc is {acc}')
-
+    return acc
 def eval_global(client_id):
     val_data = get_valid_dataloader(client_id, "test")
     pred_label = []
@@ -136,10 +136,16 @@ def eval_global(client_id):
     labels = labels.tolist()
     acc = sum(x == y for x, y in zip(pred_label, labels)) / len(labels)
     print(f'global model in {client_id} its acc is {acc}')
+    return acc
 
-for i in range(10):
-    print(f"round: {i}")
-    for client_id in client_ids:
-        if client_id == "client_3" or client_id == "client_4":
-            eval_personal(client_id)
-            # eval_global(client_id)
+
+for client_id in client_ids:
+    acc_g = 0
+    acc_p = 0
+    for i in range(20):
+        acc_p += eval_personal(client_id)
+        acc_g += eval_global(client_id)
+    acc_p /= 20
+    acc_g /= 20
+    print(f'personal avg {client_id} its acc is {acc_p}')
+    print(f'global avg {client_id} its acc is {acc_g}')
