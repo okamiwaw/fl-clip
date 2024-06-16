@@ -107,26 +107,35 @@ def eval_personal(client_id):
     print(f'personal model in {client_id} its acc is {acc}')
 
 def eval_global(client_id):
-    val_data = get_valid_dataloader(client_id,"test")
-    pred_list = []
+    val_data = get_valid_dataloader(client_id, "test")
+    pred_label = []
     label_list = []
+    tasks = [
+        "Atelectasis",
+        "Cardiomegaly",
+        "Consolidation",
+        "Edema",
+        "Pleural Effusion",
+    ]
+    cnt = 0
     for i, batch_data in enumerate(val_data):
         pixel = batch_data["pixel_value"].to("cuda:0")
+        logits = []
         report_ids = batch_data["report"]["input_ids"].to("cuda:0")
         report_mask = batch_data["report"]["attention_mask"].to("cuda:0")
-        inputs = {"input_ids": report_ids,
-                  "attention_mask": report_mask,
-                  "pixel_values": pixel}
-        medclip_clf = PromptClassifier(global_model)
-        medclip_clf.eval()
-        outputs = medclip_clf(**inputs)
-        pred = outputs['logits'].to("cuda:0")
-        pred_list.append(pred)
+        for task in tasks:
+            # input_ids = batch_data["prompt_input"][task]["input_ids"].view(1, -1).to("cuda:0")
+            # attention_mask = batch_data["prompt_input"][task]["attention_mask"].view(1, -1).to("cuda:0")
+            inputs = {"input_ids": report_ids,
+                      "attention_mask": report_mask,
+                      "pixel_values": pixel}
+            medclip_outputs = global_model(**inputs)
+            logit = medclip_outputs['logits'].cpu().detach().numpy()
+            logits.append(logit)
+        pred = np.argmax(logits)
+        pred_label.append(pred)
         label_list.append(batch_data['label'])
-    pred_list = torch.cat(pred_list, 0)
     labels = torch.cat(label_list).cpu().detach().numpy()
-    pred = pred_list.cpu().detach().numpy()
-    pred_label = pred.argmax(1)
     labels = np.argmax(labels, axis=1)
     labels = labels.tolist()
     acc = sum(x == y for x, y in zip(pred_label, labels)) / len(labels)
@@ -135,6 +144,5 @@ def eval_global(client_id):
 for i in range(10):
     print(f"round: {i}")
     for client_id in client_ids:
-        if client_id == "client_3" or client_id == "client_4":
             eval_personal(client_id)
             eval_global(client_id)
