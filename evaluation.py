@@ -84,15 +84,15 @@ def eval_personal(client_id):
         report_ids = batch_data["report"]["input_ids"].to("cuda:0")
         report_mask = batch_data["report"]["attention_mask"].to("cuda:0")
         for task in tasks:
-            # input_ids = batch_data["prompt_input"][task]["input_ids"].view(1, -1).to("cuda:0")
-            # attention_mask = batch_data["prompt_input"][task]["attention_mask"].view(1, -1).to("cuda:0")
+            input_ids = batch_data["prompt_input"][task]["input_ids"].view(1, -1).to("cuda:0")
+            attention_mask = batch_data["prompt_input"][task]["attention_mask"].view(1, -1).to("cuda:0")
             outputs = select_model(pixel, report_ids, report_mask).cpu().detach().numpy()
             max_index = np.argmax(outputs)
             person_model = person_models[client_ids[max_index]]
             if np.max(outputs) <= thd:
                 person_model = global_model
-            inputs={"input_ids":report_ids,
-                    "attention_mask":report_mask,
+            inputs={"input_ids":input_ids,
+                    "attention_mask":attention_mask,
                     "pixel_values":pixel}
             medclip_outputs = person_model(**inputs)
             logit = medclip_outputs['logits'].cpu().detach().numpy()
@@ -121,13 +121,11 @@ def eval_global(client_id):
     for i, batch_data in enumerate(val_data):
         pixel = batch_data["pixel_value"].to("cuda:0")
         logits = []
-        report_ids = batch_data["report"]["input_ids"].to("cuda:0")
-        report_mask = batch_data["report"]["attention_mask"].to("cuda:0")
         for task in tasks:
-            # input_ids = batch_data["prompt_input"][task]["input_ids"].view(1, -1).to("cuda:0")
-            # attention_mask = batch_data["prompt_input"][task]["attention_mask"].view(1, -1).to("cuda:0")
-            inputs = {"input_ids": report_ids,
-                      "attention_mask": report_mask,
+            input_ids = batch_data["prompt_input"][task]["input_ids"].view(1, -1).to("cuda:0")
+            attention_mask = batch_data["prompt_input"][task]["attention_mask"].view(1, -1).to("cuda:0")
+            inputs = {"input_ids": input_ids,
+                      "attention_mask": attention_mask,
                       "pixel_values": pixel}
             medclip_outputs = global_model(**inputs)
             logit = medclip_outputs['logits'].cpu().detach().numpy()
