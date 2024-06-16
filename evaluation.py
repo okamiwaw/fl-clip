@@ -26,14 +26,12 @@ def softmax(x):
 def get_valid_dataloader(client, data_type):
     dataset_path = constants.DATASET_PATH
     datalist_path = constants.DATALIST_PATH
-    cls_prompts = generate_chexpert_class_prompts(n=10)
     val_data = ZeroShotImageDataset(class_names=constants.CHEXPERT_COMPETITION_TASKS,
                                     dataset_path=dataset_path,
                                     datalist_path=datalist_path,
                                     client=client,
                                     data_type=data_type)
-    val_collate_fn = ZeroShotImageCollator(cls_prompts=cls_prompts,
-                                           mode='multiclass')
+    val_collate_fn = ZeroShotImageCollator(mode='multiclass')
     val_dataloader = DataLoader(val_data,
                                 batch_size=1,
                                 collate_fn=val_collate_fn,

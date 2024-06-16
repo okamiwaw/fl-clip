@@ -441,9 +441,9 @@ class ZeroShotImageDataset(Dataset):
 
 class ZeroShotImageCollator:
     def __init__(self, mode, cls_prompts=None, n_prompt=10):
-        # initialize tokenizer
         self.tokenizer = AutoTokenizer.from_pretrained(constants.BERT_TYPE, local_files_only=True)
         self.tokenizer.model_max_length = 77
+        cls_prompts = generate_chexpert_class_prompts(n=n_prompt)
         assert mode in ['multiclass', 'multilabel', 'binary']
         self.mode = mode
 
