@@ -98,8 +98,8 @@ def eval_personal(client_id):
             logit = medclip_outputs['logits'].cpu().detach().numpy()
             logits.append(logit)
         pred = np.argmax(logits)
-        if client_id == "client_3":
-            print(f"logit: logits[pred]")
+        if client_id == "client_3" or client_id == "client_4":
+            print(f"{client_id}_logit: {logits[pred]}")
         pred_label.append(pred)
         label_list.append(batch_data['label'])
 
@@ -147,4 +147,4 @@ for i in range(10):
     for client_id in client_ids:
         if client_id == "client_3" or client_id == "client_4":
             eval_personal(client_id)
-            eval_global(client_id)
+            # eval_global(client_id)
