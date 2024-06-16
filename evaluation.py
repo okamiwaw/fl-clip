@@ -145,5 +145,6 @@ def eval_global(client_id):
 for i in range(10):
     print(f"round: {i}")
     for client_id in client_ids:
+        if client_id == "client_3" or client_id == "client_4":
             eval_personal(client_id)
             eval_global(client_id)
