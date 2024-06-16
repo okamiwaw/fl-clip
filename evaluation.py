@@ -98,8 +98,11 @@ def eval_personal(client_id):
             logit = medclip_outputs['logits'].cpu().detach().numpy()
             logits.append(logit)
         pred = np.argmax(logits)
+        if client_id == "client_3":
+            print(f"logit: logits[pred]")
         pred_label.append(pred)
         label_list.append(batch_data['label'])
+
     labels = torch.cat(label_list).cpu().detach().numpy()
     labels = np.argmax(labels, axis=1)
     labels = labels.tolist()
