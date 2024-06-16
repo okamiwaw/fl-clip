@@ -111,9 +111,15 @@ def eval_global(client_id):
     pred_list = []
     label_list = []
     for i, batch_data in enumerate(val_data):
+        pixel = batch_data["pixel_value"].to("cuda:0")
+        report_ids = batch_data["report"]["input_ids"].to("cuda:0")
+        report_mask = batch_data["report"]["attention_mask"].to("cuda:0")
+        inputs = {"input_ids": report_ids,
+                  "attention_mask": report_mask,
+                  "pixel_values": pixel}
         medclip_clf = PromptClassifier(global_model)
         medclip_clf.eval()
-        outputs = medclip_clf(**batch_data)
+        outputs = medclip_clf(**inputs)
         pred = outputs['logits'].to("cuda:0")
         pred_list.append(pred)
         label_list.append(batch_data['label'])
