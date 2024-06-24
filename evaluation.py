@@ -124,6 +124,7 @@ def eval_global(client_id):
     ]
     cnt = 0
     for i, batch_data in enumerate(val_data):
+        print(i)
         pixel = batch_data["pixel_value"].to("cuda:0")
         logits = []
         for task in tasks:
@@ -183,5 +184,7 @@ def eval_client(client_id):
 
 for i in range(100):
     for client_id in client_ids:
-        # eval_client(client_id)
+        eval_client(client_id)
+for i in range(10):
+    for client_id in client_ids:
         eval_global(client_id)
