@@ -113,7 +113,6 @@ def eval_personal(client_id):
     return acc
 def eval_global(client_id):
     val_data = get_valid_dataloader(client_id, "test")
-
     pred_label = []
     label_list = []
     tasks = [
@@ -184,5 +183,5 @@ def eval_client(client_id):
 
 for i in range(100):
     for client_id in client_ids:
-        eval_client(client_id)
+        # eval_client(client_id)
         eval_global(client_id)
