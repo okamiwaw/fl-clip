@@ -28,7 +28,7 @@ def log_metric(client_id, model, acc):
     if not os.path.exists(folder_path):
         os.makedirs(folder_path)
     with open(log_file, 'a') as f:
-        f.write(f'client model {model} in {client_id} data , its acc is {acc}')
+        f.write(f'client model {model} in {client_id} data , its acc is {acc}\n')
 
 def get_valid_dataloader(client, data_type):
     dataset_path = constants.DATASET_PATH
@@ -179,7 +179,7 @@ def eval_client(client_id):
         labels = np.argmax(labels, axis=1)
         labels = labels.tolist()
         acc = sum(x == y for x, y in zip(pred_label, labels)) / len(labels)
-        print(f'client model {client_id} in {cid} data , its acc is {acc}')
+        print(f'client model {client_id} in {cid} data , its acc is {acc}\n')
         log_metric(client_id=cid,model= client_id,acc=acc)
 
 for i in range(100):
