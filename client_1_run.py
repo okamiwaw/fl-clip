@@ -95,5 +95,5 @@ for r in range(100):
         f.write(f'Round: {round}, {client_id} :ACC: {metric:.4f}\n')
     if metric > best_acc:
         best_acc = metric
-        save_path = f'./outputs/models/best/{client_id}.pth'
+        save_path = f'./outputs/models/client/{client_id}.pth'
         torch.save(client.local_model.state_dict(), save_path)

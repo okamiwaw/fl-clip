@@ -22,6 +22,13 @@ def softmax(x):
     e_x = np.exp(x - np.max(x))  # subtract the max for numerical stability
     return e_x / e_x.sum(axis=0)  # the sum is computed along the only axis (axis=0)
 
+def log_metric(client_id, model, acc):
+    log_file = './outputs/log/log_fl.txt'
+    folder_path = os.path.dirname(log_file)
+    if not os.path.exists(folder_path):
+        os.makedirs(folder_path)
+    with open(log_file, 'a') as f:
+        f.write(f'client model {model} in {client_id} data , its acc is {acc}')
 
 def get_valid_dataloader(client, data_type):
     dataset_path = constants.DATASET_PATH
@@ -106,6 +113,7 @@ def eval_personal(client_id):
     return acc
 def eval_global(client_id):
     val_data = get_valid_dataloader(client_id, "test")
+
     pred_label = []
     label_list = []
     tasks = [
@@ -136,16 +144,45 @@ def eval_global(client_id):
     labels = labels.tolist()
     acc = sum(x == y for x, y in zip(pred_label, labels)) / len(labels)
     print(f'global model in {client_id} its acc is {acc}')
-    return acc
+    log_metric(client_id=client_id, model='global_model', acc=acc)
 
+def eval_client(client_id):
+    for cid in client_ids:
+        model = person_models[client_id]
+        val_data = get_valid_dataloader(cid, "test")
+        pred_label = []
+        label_list = []
+        tasks = [
+            "Atelectasis",
+            "Cardiomegaly",
+            "Consolidation",
+            "Edema",
+            "Pleural Effusion",
+        ]
+        cnt = 0
+        for i, batch_data in enumerate(val_data):
+            pixel = batch_data["pixel_value"].to("cuda:0")
+            logits = []
+            for task in tasks:
+                input_ids = batch_data["prompt_input"][task]["input_ids"].view(1, -1).to("cuda:0")
+                attention_mask = batch_data["prompt_input"][task]["attention_mask"].view(1, -1).to("cuda:0")
+                inputs = {"input_ids": input_ids,
+                          "attention_mask": attention_mask,
+                          "pixel_values": pixel}
+                medclip_outputs = model(**inputs)
+                logit = medclip_outputs['logits'].cpu().detach().numpy()
+                logits.append(logit)
+            pred = np.argmax(logits)
+            pred_label.append(pred)
+            label_list.append(batch_data['label'])
+        labels = torch.cat(label_list).cpu().detach().numpy()
+        labels = np.argmax(labels, axis=1)
+        labels = labels.tolist()
+        acc = sum(x == y for x, y in zip(pred_label, labels)) / len(labels)
+        print(f'client model {client_id} in {cid} data , its acc is {acc}')
+        log_metric(client_id=cid,model= client_id,acc=acc)
 
-for client_id in client_ids:
-    acc_g = 0
-    acc_p = 0
-    for i in range(20):
-        acc_p += eval_personal(client_id)
-        acc_g += eval_global(client_id)
-    acc_p /= 20
-    acc_g /= 20
-    print(f'personal avg {client_id} its acc is {acc_p}')
-    print(f'global avg {client_id} its acc is {acc_g}')
+for i in range(100):
+    for client_id in client_ids:
+        eval_client(client_id)
+        eval_global(client_id)
