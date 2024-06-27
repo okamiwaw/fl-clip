@@ -80,6 +80,7 @@ class Client:
             scaler.step(optimizer)
             scaler.update()
             progress_bar.set_postfix({"loss": loss.item()})
+        torch.cuda.empty_cache()
 
     def person_train(self):
         print("personal model training starts")
@@ -99,6 +100,7 @@ class Client:
             scaler.step(optimizer)
             scaler.update()
             progress_bar.set_postfix({"loss": loss.item()})
+        torch.cuda.empty_cache()
     def select_train(self):
         select_label = self.select_label
         print("select model training starts")
