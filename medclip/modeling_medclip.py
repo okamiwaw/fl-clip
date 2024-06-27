@@ -249,32 +249,30 @@ class PromptClassifier(nn.Module):
         self.model = medclip_model
         self.ensemble = ensemble
 
-    def forward(self, pixel_value=None, prompt_input=None, **kwargs):
+    def forward(self, pixel_values=None, prompt_inputs=None, **kwargs):
         '''take image pixel values (after transform) and prompt_inputs
         (a dict of {'class1':{'input_ids':...,'attention_mask':,...}), 'class2':...}
         '''
-        device = next(self.parameters()).device
-        pixel_value = pixel_value.to(device)
+        pixel_values = pixel_values.cuda()
         class_similarities = []
         class_names = []
-        for cls_name, cls_text in prompt_input.items():
-            inputs = {'pixel_values':pixel_value}
-            for k in cls_text.keys(): inputs[k] = cls_text[k].to(device)
+        for cls_name, cls_text in prompt_inputs.items():
+            inputs = {'pixel_values':pixel_values}
+            for k in cls_text.keys(): inputs[k] = cls_text[k].cuda()
 
-            with torch.no_grad():
-                # TODO:
-                # take soft mask over class_prompts to reach the similarities to classes
-                medclip_outputs = self.model(**inputs)
-                logits = medclip_outputs['logits']
+            # TODO:
+            # take soft mask over class_prompts to reach the similarities to classes
+            medclip_outputs = self.model(**inputs)
+            logits = medclip_outputs['logits']
 
-                # take logits max as the class similarity
-                # cls_sim = torch.max(logits, 1)[0] # equivalent use only one prompt
-                if self.ensemble:
-                    cls_sim = torch.mean(logits, 1) # equivalent to prompt ensembling
-                else:
-                    cls_sim = torch.max(logits, 1)[0]
-                class_similarities.append(cls_sim)
-                class_names.append(cls_name)
+            # take logits max as the class similarity
+            # cls_sim = torch.max(logits, 1)[0] # equivalent use only one prompt
+            if self.ensemble:
+                cls_sim = torch.mean(logits, 1) # equivalent to prompt ensembling
+            else:
+                cls_sim = torch.max(logits, 1)[0]
+            class_similarities.append(cls_sim)
+            class_names.append(cls_name)
 
         class_similarities = torch.stack(class_similarities, 1)
         outputs = {

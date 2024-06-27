@@ -8,6 +8,7 @@ from torchvision import transforms
 
 from medclip import constants, MedCLIPModel, MedCLIPVisionModelViT, PromptClassifier
 from medclip.client import Client
+from medclip.multi_fusion import MLPFusion_Mdoel
 from medclip.prompts import generate_chexpert_class_prompts
 from medclip.sever import Server
 from medclip.dataset import ImageTextContrastiveDataset, ImageTextContrastiveCollator, ZeroShotImageDataset, \
@@ -40,18 +41,17 @@ def get_train_dataloader(client_id):
     return train_dataloader
 
 
-def get_valid_dataloader(data_type):
+def get_valid_dataloader(client , data_type):
     dataset_path = constants.DATASET_PATH
     datalist_path = constants.DATALIST_PATH
-    cls_prompts = generate_chexpert_class_prompts(n=10)
     val_data = ZeroShotImageDataset(class_names=constants.CHEXPERT_COMPETITION_TASKS,
                                     dataset_path=dataset_path,
                                     datalist_path=datalist_path,
+                                    client=client,
                                     data_type=data_type)
-    val_collate_fn = ZeroShotImageCollator(cls_prompts=cls_prompts,
-                                           mode='multiclass')
+    val_collate_fn = ZeroShotImageCollator(mode='multiclass')
     val_dataloader = DataLoader(val_data,
-                                batch_size=1,
+                                batch_size=50,
                                 collate_fn=val_collate_fn,
                                 shuffle=False,
                                 pin_memory=True,
@@ -79,32 +79,28 @@ class Runner:
     def config(self):
         self.client_ids = constants.CLIENT_IDS
         self.rounds = constants.ROUNDS
+        client_nums = constants.SELECT_NUM
         global_model = MedCLIPModel(vision_cls=MedCLIPVisionModelViT)
-        select_model_image = vgg11(
-            num_classes=constants.SELECT_NUM
+        select_model = MLPFusion_Mdoel(
+            num_classes=client_nums
         )
-        select_model_text = Bert_Classifier(num_classes=constants.SELECT_NUM)
-        select_image_dict = torch.load('./outputs/models/best/select_model_image.pth')
-        select_text_dict = torch.load('./outputs/models/best/select_model_text.pth')
-        select_model_image.load_state_dict(select_image_dict)
-        select_model_text.load_state_dict(select_text_dict)
+        select_dict = torch.load('./outputs/models/best/select_model.pth')
+        select_model.load_state_dict(select_dict)
         log_file = constants.LOGFILE
         self.server = Server(global_model=global_model,
-                             select_model_image=select_model_image,
-                             select_model_text=select_model_text,
-                             client_ids=self.client_ids,
-                             log_file=log_file)
+                             select_model=select_model,
+                             client_ids=self.client_ids,)
 
     def train(self):
         server = self.server
         for r in range(self.rounds):
             print(f"round {r} / {self.rounds} is beginning!")
+            val_global = get_valid_dataloader("no_client", 'global')
             for client_id in self.client_ids:
                 print(f"{client_id} is starting training!")
                 log_file = constants.LOGFILE
                 train_dataloader = get_train_dataloader(client_id)
-                val_person = get_valid_dataloader(client_id)
-                val_global = get_valid_dataloader('global')
+                val_person = get_valid_dataloader(client_id, "test")
                 clients_label = constants.CLIENTS_LABEL
                 client = Client(client_id=client_id,
                                 train_dataloader=train_dataloader,
@@ -114,11 +110,11 @@ class Runner:
                                 log_file=log_file,
                                 local_dict=server.global_model.state_dict(),
                                 person_dict=server.person_models[client_id].state_dict(),
-                                select_dict_image=server.select_model_image.state_dict(),
-                                select_dict_text=server.select_model_text.state_dict(),
+                                select_dict=server.select_model.state_dict(),
                                 select_label=clients_label[client_id]
                                 )
                 client.validate_global()
+                client.validate_person()
                 p1 = mp.Process(target=client.person_train)
                 p2 = mp.Process(target=client.local_train)
                 p1.start()
@@ -134,7 +130,6 @@ class Runner:
                                model=client.person_model.state_dict(),
                                model_type="person_model")
             server.aggregate()
-            server.validate(val_global)
 def main():
     runner = Runner()
     runner.config()

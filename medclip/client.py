@@ -14,6 +14,7 @@ from medclip.losses import ImageTextContrastiveLoss
 from medclip.multi_fusion import MLPFusion_Mdoel
 from medclip.select_model import vgg11
 from medclip.select_model import Bert_Classifier
+from torch.utils.tensorboard import SummaryWriter
 
 
 class Client:
@@ -24,7 +25,6 @@ class Client:
                  val_global=None,
                  device='cpu',
                  round=0,
-                 epochs=1,
                  local_dict=None,
                  person_dict=None,
                  select_dict=None,
@@ -34,7 +34,6 @@ class Client:
         self.client_id = client_id
         self.round = round
         self.device = device
-        self.epochs = epochs
         self.log_file = log_file
         self.select_label = select_label
         self.train_loader = train_dataloader
@@ -52,6 +51,7 @@ class Client:
             self.person_model.load_state_dict(copy.deepcopy(person_dict))
         if select_dict is not None:
             self.select_model.load_state_dict(copy.deepcopy(select_dict))
+        self.writer = SummaryWriter('outputs/log/fl-train')
 
 
     def log_metric(self, client, task, acc):
@@ -99,44 +99,6 @@ class Client:
             scaler.step(optimizer)
             scaler.update()
             progress_bar.set_postfix({"loss": loss.item()})
-
-    # def select_train(self):
-    #     select_label = self.select_label
-    #     print("select model training starts")
-    #     criterion = torch.nn.CrossEntropyLoss()
-    #     optimizer_image = optim.AdamW(self.select_model_image.parameters(), lr=self.select_lr,
-    #                                   weight_decay=self.weight_decay)
-    #     progress_bar = tqdm(enumerate(self.train_loader), total=len(self.train_loader), leave=True)
-    #     scaler = GradScaler()
-    #     for i, batch_data in progress_bar:
-    #         optimizer_image.zero_grad()
-    #         with autocast():
-    #             inputs = batch_data["pixel_values"].to("cuda:0")
-    #             labels = np.ones((inputs.shape[0], 1)) * select_label
-    #             labels = torch.tensor(labels).to("cuda:0")
-    #             outputs = self.select_model_image(inputs)
-    #             loss = criterion(outputs, labels)
-    #         scaler.scale(loss).backward()
-    #         scaler.step(optimizer_image)
-    #         scaler.update()
-    #         progress_bar.set_postfix({"loss": loss.item()})
-    #     optimizer_text = optim.AdamW(self.select_model_text.parameters(), lr=self.select_lr,
-    #                                  weight_decay=self.weight_decay)
-    #     progress_bar = tqdm(enumerate(self.train_loader), total=len(self.train_loader), leave=True)
-    #     scaler = GradScaler()
-    #     for i, batch_data in progress_bar:
-    #         optimizer_text.zero_grad()
-    #         with autocast():
-    #             input_ids = batch_data["input_ids"].to("cuda:0")
-    #             attention_mask = batch_data["attention_mask"].to("cuda:0")
-    #             labels = np.ones((input_ids.shape[0], 1)) * select_label
-    #             labels = torch.tensor(labels).to("cuda:0")
-    #             outputs = self.select_model_text(input_ids, attention_mask)
-    #             loss = criterion(outputs, labels)
-    #         scaler.scale(loss).backward()
-    #         scaler.step(optimizer_text)
-    #         scaler.update()
-    #         progress_bar.set_postfix({"loss": loss.item()})
     def select_train(self):
         select_label = self.select_label
         print("select model training starts")
@@ -198,6 +160,7 @@ class Client:
             self.save_best_model('local')
             constants.GLOBAL_ACC = metric
         print(f"global model acc is {metric}")
+        self.writer.add_scalar(f'global-{self.client_id}/fl-train', metric, self.round)
         self.log_metric(self.client_id, "global", metric)
         self.log_metric(self.client_id, "global_best", constants.GLOBAL_ACC)
 
@@ -215,5 +178,5 @@ class Client:
             self.save_best_model('person')
             constants.CLIENT_ACC[self.client_id] = metric
         print(f"personal model acc is {metric}")
-        self.log_metric(self.client_id, "person", metric)
+        self.writer.add_scalar(f'personal-{self.client_id}/fl-train', metric, self.round)
         self.log_metric(self.client_id, "person_best", constants.CLIENT_ACC[self.client_id])
