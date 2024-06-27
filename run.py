@@ -35,7 +35,7 @@ def get_train_dataloader(client_id):
                                   collate_fn=train_collate_fn,
                                   shuffle=True,
                                   pin_memory=True,
-                                  num_workers=0,
+                                  num_workers=2,
                                   )
     return train_dataloader
 
@@ -54,7 +54,7 @@ def get_valid_dataloader(client , data_type):
                                 collate_fn=val_collate_fn,
                                 shuffle=False,
                                 pin_memory=True,
-                                num_workers=0,
+                                num_workers=2,
                                 )
     return val_dataloader
 
@@ -94,11 +94,12 @@ class Runner:
         server = self.server
         for r in range(self.rounds):
             print(f"round {r} / {self.rounds} is beginning!")
-            val_global = get_valid_dataloader("no_client", 'global')
+
             for client_id in self.client_ids:
                 print(f"{client_id} is starting training!")
                 log_file = constants.LOGFILE
                 train_dataloader = get_train_dataloader(client_id)
+                val_global = get_valid_dataloader("no_client", 'global')
                 val_person = get_valid_dataloader(client_id, "test")
                 clients_label = constants.CLIENTS_LABEL
                 client = Client(client_id=client_id,
