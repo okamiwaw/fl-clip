@@ -13,8 +13,7 @@ from medclip.prompts import generate_chexpert_class_prompts
 from medclip.sever import Server
 from medclip.dataset import ImageTextContrastiveDataset, ImageTextContrastiveCollator, ZeroShotImageDataset, \
     ZeroShotImageCollator
-from medclip.select_model import vgg11
-from medclip.select_model import Bert_Classifier
+
 
 def get_train_dataloader(client_id):
     dataset_path = constants.DATASET_PATH
@@ -73,7 +72,7 @@ class Runner:
         random.seed(seed)
         os.environ['PYTHONASHSEED'] = str(seed)
         os.environ['TOKENIZERS_PARALLELISM'] = 'false'
-        mp.set_start_method('spawn')
+        mp.set_start_method('spawn', force=True)
 
 
     def config(self):
