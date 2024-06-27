@@ -36,7 +36,8 @@ class Client:
         self.device = device
         self.log_file = log_file
         self.select_label = select_label
-        self.train_loader = train_dataloader
+        self.train_loader1 = train_dataloader
+        self.train_loader2 = copy.deepcopy(train_dataloader)
         self.val_person = val_person
         self.val_global = val_global
         self.local_model = MedCLIPModel(vision_cls=MedCLIPVisionModelViT).to("cuda:0")
@@ -66,7 +67,7 @@ class Client:
         print("local model training starts")
         loss_model = ImageTextContrastiveLoss(self.local_model).to("cuda:0")
         optimizer = optim.Adam(loss_model.parameters(), lr=self.textvision_lr)
-        progress_bar = tqdm(enumerate(self.train_loader), total=len(self.train_loader), leave=True)
+        progress_bar = tqdm(enumerate(self.train_loader1), total=len(self.train_loader1), leave=True)
         scaler = GradScaler()
         for i, batch_data in progress_bar:
             optimizer.zero_grad()
@@ -86,7 +87,7 @@ class Client:
         print("personal model training starts")
         loss_model = ImageTextContrastiveLoss(self.person_model).to("cuda:1")
         optimizer = optim.Adam(loss_model.parameters(), lr=self.textvision_lr)
-        progress_bar = tqdm(enumerate(self.train_loader), total=len(self.train_loader), leave=True)
+        progress_bar = tqdm(enumerate(self.train_loader2), total=len(self.train_loader2), leave=True)
         scaler = GradScaler()
         for i, batch_data in progress_bar:
             optimizer.zero_grad()
