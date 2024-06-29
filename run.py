@@ -83,7 +83,7 @@ class Runner:
         select_model = MLPFusion_Mdoel(
             num_classes=client_nums
         )
-        select_dict = torch.load('./outputs/models/best/select_model.pth')
+        select_dict = torch.load('./outputs/models/best/select_model.pth',map_location=torch.device('cpu'))
         select_model.load_state_dict(select_dict)
         log_file = constants.LOGFILE
         self.server = Server(global_model=global_model,
