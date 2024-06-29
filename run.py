@@ -113,8 +113,8 @@ class Runner:
                                 select_dict=server.select_model.state_dict(),
                                 select_label=clients_label[client_id]
                                 )
-                client.validate_global()
-                client.validate_person()
+                # client.validate_global()
+                # client.validate_person()
                 # mp.spawn(client.person_train)
                 mp.spawn(client.person_train)
                 mp.spawn(client.local_train)
