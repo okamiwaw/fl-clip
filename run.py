@@ -117,7 +117,7 @@ class Runner:
                 client.validate_person()
                 # mp.spawn(client.person_train)
                 mp.spawn(client.person_train)
-                mp.spawn(client.person_train)
+                mp.spawn(client.local_train)
                 # p2 = mp.Process(target=client.local_train)
                 # p1.start()
                 # p2.start()
