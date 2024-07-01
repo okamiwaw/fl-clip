@@ -51,7 +51,6 @@ class Client:
             self.person_model.load_state_dict(copy.deepcopy(person_dict))
         if select_dict is not None:
             self.select_model.load_state_dict(copy.deepcopy(select_dict))
-        # self.writer = SummaryWriter('outputs/log/fl-train')
 
 
     def log_metric(self, client, task, acc):
@@ -160,7 +159,8 @@ class Client:
             self.save_best_model('local')
             constants.GLOBAL_ACC = metric
         print(f"global model acc is {metric}")
-        self.writer.add_scalar(f'global-{self.client_id}/fl-train', metric, self.round)
+        writer = SummaryWriter('outputs/log/fl-train')
+        writer.add_scalar(f'global-{self.client_id}/fl-train', metric, self.round)
         self.log_metric(self.client_id, "global", metric)
         self.log_metric(self.client_id, "global_best", constants.GLOBAL_ACC)
 
@@ -178,5 +178,6 @@ class Client:
             self.save_best_model('person')
             constants.CLIENT_ACC[self.client_id] = metric
         print(f"personal model acc is {metric}")
-        self.writer.add_scalar(f'personal-{self.client_id}/fl-train', metric, self.round)
+        writer = SummaryWriter('outputs/log/fl-train')
+        writer.add_scalar(f'personal-{self.client_id}/fl-train', metric, self.round)
         self.log_metric(self.client_id, "person_best", constants.CLIENT_ACC[self.client_id])

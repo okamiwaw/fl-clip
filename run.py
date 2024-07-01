@@ -4,6 +4,7 @@ import random
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
+from torch.utils.tensorboard import SummaryWriter
 from torchvision import transforms
 
 from medclip import constants, MedCLIPModel, MedCLIPVisionModelViT, PromptClassifier
@@ -92,6 +93,7 @@ class Runner:
 
     def train(self):
         server = self.server
+        writer = SummaryWriter('outputs/log/fl-train')
         for r in range(self.rounds):
             print(f"round {r} / {self.rounds} is beginning!")
             for client_id in self.client_ids:
@@ -112,11 +114,8 @@ class Runner:
                                 select_dict=server.select_model.state_dict(),
                                 select_label=clients_label[client_id]
                                 )
-                # client.validate_global()
-                # client.validate_person()
-                # mp.spawn(client.person_train)
-                # mp.spawn(client.person_train)
-                # mp.spawn(client.local_train)
+                client.validate_global()
+                client.validate_person()
                 p1 = mp.Process(target=client.local_train)
                 p2 = mp.Process(target=client.person_train)
                 p1.start()
