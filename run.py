@@ -57,8 +57,7 @@ def get_valid_dataloader(client , data_type):
                                 num_workers=2,
                                 )
     return val_dataloader
-def worker():
-    print("bp")
+
 class Runner:
     def __init__(self):
         # set the initial environment
@@ -118,7 +117,7 @@ class Runner:
                 # mp.spawn(client.person_train)
                 # mp.spawn(client.person_train)
                 # mp.spawn(client.local_train)
-                p1 = mp.Process(target=worker)
+                p1 = mp.Process(target=client.local_train)
                 # p2 = mp.Process(target=client.local_train)
                 p1.start()
                 # p2.start()
