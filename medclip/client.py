@@ -51,7 +51,7 @@ class Client:
             self.person_model.load_state_dict(copy.deepcopy(person_dict))
         if select_dict is not None:
             self.select_model.load_state_dict(copy.deepcopy(select_dict))
-        self.writer = SummaryWriter('outputs/log/fl-train')
+        # self.writer = SummaryWriter('outputs/log/fl-train')
 
 
     def log_metric(self, client, task, acc):
@@ -63,24 +63,23 @@ class Client:
             f.write(f'Round: {self.round}, {client}-{task} :ACC: {acc:.4f}\n')
 
     def local_train(self):
-        # print("local model training starts")
-        # loss_model = ImageTextContrastiveLoss(self.local_model).to("cuda:0")
-        # optimizer = optim.Adam(loss_model.parameters(), lr=self.textvision_lr)
-        # progress_bar = tqdm(enumerate(self.train_loader), total=len(self.train_loader), leave=True)
-        # scaler = GradScaler()
-        # for i, batch_data in progress_bar:
-        #     optimizer.zero_grad()
-        #     with autocast():
-        #         loss_return = loss_model(**batch_data)
-        #         loss = loss_return['loss_value']
-        #     scale_before_step = scaler.get_scale()
-        #     scaler.scale(loss).backward()
-        #     scaler.unscale_(optimizer)
-        #     torch.nn.utils.clip_grad_norm_(loss_model.parameters(), 1)
-        #     scaler.step(optimizer)
-        #     scaler.update()
-        #     progress_bar.set_postfix({"loss": loss.item()})
-        print("bp")
+        print("local model training starts")
+        loss_model = ImageTextContrastiveLoss(self.local_model).to("cuda:0")
+        optimizer = optim.Adam(loss_model.parameters(), lr=self.textvision_lr)
+        progress_bar = tqdm(enumerate(self.train_loader), total=len(self.train_loader), leave=True)
+        scaler = GradScaler()
+        for i, batch_data in progress_bar:
+            optimizer.zero_grad()
+            with autocast():
+                loss_return = loss_model(**batch_data)
+                loss = loss_return['loss_value']
+            scale_before_step = scaler.get_scale()
+            scaler.scale(loss).backward()
+            scaler.unscale_(optimizer)
+            torch.nn.utils.clip_grad_norm_(loss_model.parameters(), 1)
+            scaler.step(optimizer)
+            scaler.update()
+            progress_bar.set_postfix({"loss": loss.item()})
 
     def person_train(self):
         print("personal model training starts")
