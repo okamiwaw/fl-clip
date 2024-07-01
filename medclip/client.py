@@ -145,7 +145,7 @@ class Client:
             model_path = os.path.join(save_dir, f"person_model_{self.client_id}.pth")
             torch.save(self.person_model.state_dict(), model_path)
 
-    def validate_global(self):
+    def validate_global(self,writer):
         valid_global = self.val_global
         medclip_clf = PromptClassifier(self.local_model)
         evaluator = Evaluator(
@@ -159,12 +159,11 @@ class Client:
             self.save_best_model('local')
             constants.GLOBAL_ACC = metric
         print(f"global model acc is {metric}")
-        writer = SummaryWriter('outputs/log/fl-train')
         writer.add_scalar(f'global-{self.client_id}/fl-train', metric, self.round)
         self.log_metric(self.client_id, "global", metric)
         self.log_metric(self.client_id, "global_best", constants.GLOBAL_ACC)
 
-    def validate_person(self):
+    def validate_person(self,writer):
         valid_person = self.val_person
         medclip_clf = PromptClassifier(self.person_model)
         evaluator = Evaluator(
@@ -178,6 +177,5 @@ class Client:
             self.save_best_model('person')
             constants.CLIENT_ACC[self.client_id] = metric
         print(f"personal model acc is {metric}")
-        writer = SummaryWriter('outputs/log/fl-train')
         writer.add_scalar(f'personal-{self.client_id}/fl-train', metric, self.round)
         self.log_metric(self.client_id, "person_best", constants.CLIENT_ACC[self.client_id])
