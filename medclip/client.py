@@ -40,7 +40,7 @@ class Client:
         self.val_person = val_person
         self.val_global = val_global
         self.local_model = MedCLIPModel(vision_cls=MedCLIPVisionModelViT).to("cuda:0")
-        self.person_model = MedCLIPModel(vision_cls=MedCLIPVisionModelViT).to("cuda:0")
+        self.person_model = MedCLIPModel(vision_cls=MedCLIPVisionModelViT).to("cuda:1")
         self.select_model = MLPFusion_Mdoel(num_classes=constants.SELECT_NUM).to("cuda:0")
         self.textvision_lr = constants.VIT_BERT_LEARNING_RATE
         self.weight_decay = constants.WEIGHT_DECAY
@@ -82,7 +82,7 @@ class Client:
 
     def person_train(self):
         print("personal model training starts")
-        loss_model = ImageTextContrastiveLoss(self.person_model).to("cuda:0")
+        loss_model = ImageTextContrastiveLoss(self.person_model).to("cuda:1")
         optimizer = optim.Adam(loss_model.parameters(), lr=self.textvision_lr)
         progress_bar = tqdm(enumerate(self.train_loader), total=len(self.train_loader), leave=True)
         scaler = GradScaler()
