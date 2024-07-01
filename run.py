@@ -35,7 +35,7 @@ def get_train_dataloader(client_id):
                                   collate_fn=train_collate_fn,
                                   shuffle=True,
                                   pin_memory=True,
-                                  num_workers=4,
+                                  num_workers=2,
                                   )
     return train_dataloader
 
@@ -54,10 +54,11 @@ def get_valid_dataloader(client , data_type):
                                 collate_fn=val_collate_fn,
                                 shuffle=False,
                                 pin_memory=True,
-                                num_workers=4,
+                                num_workers=2,
                                 )
     return val_dataloader
-
+def worker():
+    print("bp")
 class Runner:
     def __init__(self):
         # set the initial environment
@@ -117,12 +118,12 @@ class Runner:
                 # mp.spawn(client.person_train)
                 # mp.spawn(client.person_train)
                 # mp.spawn(client.local_train)
-                p1 = mp.Process(target=client.local_train)
+                p1 = mp.Process(target=worker)
                 # p2 = mp.Process(target=client.local_train)
                 p1.start()
                 # p2.start()
-                # p1.join()
-                p2.join()
+                p1.join()
+                # p2.join()
                 client.validate_person()
                 diff_local = client.compute_diff(server.global_model, "global")
                 server.receive(client_id=client_id,
