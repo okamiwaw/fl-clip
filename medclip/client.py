@@ -11,10 +11,8 @@ from transformers import AutoModelForSequenceClassification
 from medclip import MedCLIPModel, MedCLIPVisionModelViT, constants, PromptClassifier, MedCLIPProcessor
 from medclip.evaluator import Evaluator
 from medclip.losses import ImageTextContrastiveLoss
-from medclip.multi_fusion import MLPFusion_Mdoel
-from medclip.select_model import vgg11
-from medclip.select_model import Bert_Classifier
-from torch.utils.tensorboard import SummaryWriter
+from medclip.multi_fusion import MLPFusion_Mdoel,CAFusion_Mdoel
+
 
 
 class Client:
@@ -25,6 +23,7 @@ class Client:
                  val_global=None,
                  device='cpu',
                  round=0,
+                 select_method="mlp",
                  local_dict=None,
                  person_dict=None,
                  select_dict=None,
@@ -40,8 +39,11 @@ class Client:
         self.val_person = val_person
         self.val_global = val_global
         self.local_model = MedCLIPModel(vision_cls=MedCLIPVisionModelViT).to("cuda:0")
-        self.person_model = MedCLIPModel(vision_cls=MedCLIPVisionModelViT).to("cuda:1")
-        self.select_model = MLPFusion_Mdoel(num_classes=constants.SELECT_NUM).to("cuda:0")
+        self.person_model = MedCLIPModel(vision_cls=MedCLIPVisionModelViT).to("cuda:0")
+        if select_method == 'mlp':
+            self.select_model = MLPFusion_Mdoel(num_classes=constants.SELECT_NUM).to("cuda:0")
+        else:
+            self.select_model = CAFusion_Mdoel(num_classes=constants.SELECT_NUM).to("cuda:0")
         self.textvision_lr = constants.VIT_BERT_LEARNING_RATE
         self.weight_decay = constants.WEIGHT_DECAY
         self.select_lr = constants.SELECT_MODEL_LEARNING_RATE

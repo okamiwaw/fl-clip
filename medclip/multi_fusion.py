@@ -32,12 +32,21 @@ class ImageModel(nn.Module):
         output = self.model(pixel)
         return output['pooler_output']
 
+class CrossAttention(nn.Module):
+    def __init__(self, d_model, num_heads):
+        super(CrossAttention, self).__init__()
+        self.attention = nn.MultiheadAttention(embed_dim=d_model, num_heads=num_heads)
+
+    def forward(self, query, key, value):
+        attn_output, _ = self.attention(query, key, value)
+        return attn_output
 
 class MLPFusion_Mdoel(nn.Module):
     def __init__(self,
                  text_model = None,
                  image_model = None,
-                 num_classes = 1):
+                 num_classes = 1,
+                 ):
         text_model = TextModel()
         image_model = ImageModel()
         super(MLPFusion_Mdoel, self).__init__()
@@ -55,4 +64,27 @@ class MLPFusion_Mdoel(nn.Module):
         output = F.softmax(x, dim=1)
         return output
 
+class CAFusion_Mdoel(nn.Module):
+    def __init__(self,
+                 text_model = None,
+                 image_model = None,
+                 num_classes = 1,
+                 d_model=768,
+                 num_heads=8
+                 ):
+        text_model = TextModel()
+        image_model = ImageModel()
+        super(CAFusion_Mdoel, self).__init__()
+        self.text_model = text_model if text_model is not None else TextModel()
+        self.image_model = image_model if image_model is not None else ImageModel()
+        self.cross_attention = CrossAttention(d_model=d_model, num_heads=num_heads)
+        self.fc = nn.Linear(d_model, num_classes)
 
+    def forward(self, pixel, input_ids, attention_mask):
+        text_features = self.text_model(input_ids = input_ids, attention_mask = attention_mask)
+        image_features = self.image_model(pixel)
+        cross_attn_output = self.cross_attention(text_features, image_features, image_features)
+        cross_attn_output = cross_attn_output.squeeze(1)
+        x = self.fc(cross_attn_output)
+        output = F.softmax(x, dim=1)
+        return output

@@ -5,17 +5,17 @@ import random
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
+from torch.utils.tensorboard import SummaryWriter
 from torchvision import transforms
 
 from medclip import constants, MedCLIPModel, MedCLIPVisionModelViT, PromptClassifier
 from medclip.client import Client
-from medclip.multi_fusion import MLPFusion_Mdoel
+from medclip.multi_fusion import MLPFusion_Mdoel,CAFusion_Mdoel
 from medclip.prompts import generate_chexpert_class_prompts
 from medclip.sever import Server
 from medclip.dataset import ImageTextContrastiveDataset, ImageTextContrastiveCollator, ZeroShotImageDataset, \
     ZeroShotImageCollator
-from medclip.select_model import vgg11
-from medclip.select_model import Bert_Classifier
+
 
 
 def get_train_dataloader(client_id):
@@ -34,7 +34,7 @@ def get_train_dataloader(client_id):
                                              imgtransform=transform, client_id=client_id)
     train_collate_fn = ImageTextContrastiveCollator()
     train_dataloader = DataLoader(train_data,
-                                  batch_size=50,
+                                  batch_size=48,
                                   collate_fn=train_collate_fn,
                                   shuffle=True,
                                   pin_memory=True,
@@ -43,16 +43,15 @@ def get_train_dataloader(client_id):
     return train_dataloader
 
 
-def get_valid_dataloader(data_type):
+def get_valid_dataloader(client , data_type):
     dataset_path = constants.DATASET_PATH
     datalist_path = constants.DATALIST_PATH
-    cls_prompts = generate_chexpert_class_prompts(n=10)
     val_data = ZeroShotImageDataset(class_names=constants.CHEXPERT_COMPETITION_TASKS,
                                     dataset_path=dataset_path,
                                     datalist_path=datalist_path,
+                                    client=client,
                                     data_type=data_type)
-    val_collate_fn = ZeroShotImageCollator(cls_prompts=cls_prompts,
-                                           mode='multiclass')
+    val_collate_fn = ZeroShotImageCollator(mode='multiclass')
     val_dataloader = DataLoader(val_data,
                                 batch_size=50,
                                 collate_fn=val_collate_fn,
@@ -93,7 +92,10 @@ class Runner:
         self.rounds = constants.ROUNDS
         client_nums = constants.SELECT_NUM
         global_model = MedCLIPModel(vision_cls=MedCLIPVisionModelViT)
-        select_model = MLPFusion_Mdoel(
+        # select_model = MLPFusion_Mdoel(
+        #     num_classes=client_nums
+        # )
+        select_model = CAFusion_Mdoel(
             num_classes=client_nums
         )
         self.server = Server(global_model=global_model,
@@ -102,8 +104,9 @@ class Runner:
 
     def train(self):
         server = self.server
-        select_image_acc = 0
-        select_text_acc = 0
+        select_method = 'ca'
+        writer = SummaryWriter(f'outputs/log/fl-select_{select_method}')
+        select_acc = 0
         for r in range(200):
             print(f"round {r} / 200 is beginning!")
             val_global = get_train_dataloader('global')
@@ -121,6 +124,7 @@ class Runner:
                                 log_file=log_file,
                                 local_dict=server.global_model.state_dict(),
                                 person_dict=server.person_models[client_id].state_dict(),
+                                select_method=select_method,
                                 select_dict=server.select_model.state_dict(),
                                 select_label=clients_label[client_id]
                                 )
@@ -150,14 +154,15 @@ class Runner:
                     acc = (pred == labels).mean()
                     metric += acc
                 metric /= len(val_global)
+                writer.add_scalar(f'select_{select_method}_acc', metric, r)
                 log_metric(r, 'select', metric)
                 print(f"select model acc is {metric}")
-            if metric > select_image_acc:
+            if metric > select_acc:
                 select_acc = metric
                 print(f'metric:{select_acc}')
                 save_dir = f'outputs/models/best'
                 os.makedirs(save_dir, exist_ok=True)
-                select_path = os.path.join(save_dir, "select_model.pth")
+                select_path = os.path.join(save_dir, f'select_model_{select_method}.pth')
                 torch.save(server.select_model.state_dict(), select_path)
             select_model.to("cpu")
 
