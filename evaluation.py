@@ -1,21 +1,13 @@
 import os
-import torch.multiprocessing as mp
-import random
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
-from torchvision import transforms
 
 from medclip import constants, MedCLIPModel, MedCLIPVisionModelViT, PromptClassifier
-from medclip.client import Client
 from medclip.multi_fusion import MLPFusion_Mdoel
 from medclip.prompts import generate_chexpert_class_prompts
-from medclip.sever import Server
 from medclip.dataset import ImageTextContrastiveDataset, ImageTextContrastiveCollator, ZeroShotImageDataset, \
     ZeroShotImageCollator
-from medclip.select_model import vgg11
-from medclip.select_model import Bert_Classifier
-
 
 def softmax(x):
     """Compute softmax values for each sets of scores in x."""
@@ -188,3 +180,6 @@ for i in range(100):
 for i in range(10):
     for client_id in client_ids:
         eval_global(client_id)
+
+
+

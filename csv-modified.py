@@ -444,4 +444,93 @@
 # df.to_csv(output_file_path, index=False)
 #
 # print(f"Modified CSV file has been saved to {output_file_path}")
+# import pandas as pd
+#
+# # 读取CSV文件
+# df = pd.read_csv('NIH.csv')
+#
+# # 从第3列到第16列的数据
+# data_columns = df.columns[2:16]
+#
+# # 标签列
+# labels = ["Atelectasis", "Cardiomegaly", "Consolidation", "Edema", "Pleural Effusion"]
+#
+# # 确保标签列在所选列中
+# labels = [label for label in labels if label in data_columns]
+#
+# # 筛选满足条件的行
+# filtered_df = df[(df[labels].sum(axis=1) == 1) & (df[data_columns].sum(axis=1) == 1)]
+#
+# # 选择从第3列到第16列的数据
+# result = filtered_df
+#
+# # 保存筛选后的数据到一个新的CSV文件
+# result.to_csv('filtered_file.csv', index=False)
 
+# import pandas as pd
+#
+#
+# def filter_rows(input_csv, output_csv, columns, rows_per_column=200):
+#     # 读取CSV文件
+#     df = pd.read_csv(input_csv)
+#
+#     # 初始化一个空的DataFrame来存储结果
+#     result_df = pd.DataFrame()
+#
+#     # 为每个指定的列筛选200行值为1的数据
+#     for column in columns:
+#         filtered_rows = df[df[column] == 1].head(rows_per_column)
+#         result_df = pd.concat([result_df, filtered_rows])
+#
+#     # 去重并保存到新的CSV文件
+#     result_df = result_df.drop_duplicates()
+#     result_df.to_csv(output_csv, index=False)
+#
+#
+# # 使用示例
+# input_csv = 'a.csv'
+# output_csv = 'b.csv'
+# columns = ["Atelectasis", "Cardiomegaly", "Consolidation", "Edema", "Pleural Effusion"]
+#
+# filter_rows(input_csv, output_csv, columns)
+
+
+import pandas as pd
+
+# 读取CSV文件
+df = pd.read_csv('client_3_t.csv')
+
+# 添加一列‘client’，并将值设为2
+df['client'] = 2
+
+# 保存修改后的CSV文件
+df.to_csv('client_3_t.csv', index=False)
+
+
+# import pandas as pd
+#
+# # 读取CSV文件
+# df1 = pd.read_csv('client_1_test.csv')
+# df2 = pd.read_csv('client_2_test.csv')
+# df3 = pd.read_csv('client_3_test.csv')
+# df4 = pd.read_csv('client_4_test.csv')
+#
+# # 合并所有数据框
+# merged_df = pd.concat([df2, df1, df3, df4])
+#
+# # 保存合并后的CSV文件
+# merged_df.to_csv('a.csv', index=False)
+#
+# print("CSV files merged successfully.")
+# import pandas as pd
+#
+# # 读取CSV文件
+# df = pd.read_csv('client_3_test.csv')
+#
+# # 在‘imgpath’列的每个值前添加‘NIH/’
+# df['imgpath'] = 'NIH/' + df['imgpath'].astype(str)
+#
+# # 保存修改后的CSV文件
+# df.to_csv('client_3_test.csv', index=False)
+#
+# print("Prefix 'NIH/' added to 'imgpath' column successfully.")
