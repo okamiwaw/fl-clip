@@ -101,3 +101,22 @@ class CAFusion_Mdoel(nn.Module):
         x = self.fc(cross_attn_output)
         output = F.softmax(x, dim=1)
         return output
+class PromptLearner(nn.Module):
+    def __init__(self, n_classes):
+        super(PromptLearner, self).__init__()
+        model_name = constants.BERT_TYPE
+        self.model = AutoModel.from_pretrained(model_name, output_hidden_states=True)
+        self.tokenizer = AutoModel.from_pretrained(model_name)
+        for param in self.model.parameters():
+            param.requires_grad = False
+        self.drop = nn.Dropout(p=0.3)
+        self.out = nn.Linear(self.bert.config.hidden_size, n_classes)
+
+    def forward(self, input_ids, attention_mask):
+        outputs = self.bert(
+            input_ids=input_ids,
+            attention_mask=attention_mask
+        )
+        pooled_output = outputs[1]
+        output = self.drop(pooled_output)
+        return self.out(output)

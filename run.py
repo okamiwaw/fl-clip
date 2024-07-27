@@ -1,3 +1,4 @@
+import argparse
 import os
 import torch.multiprocessing as mp
 import random
@@ -16,7 +17,7 @@ from medclip.dataset import ImageTextContrastiveDataset, ImageTextContrastiveCol
     ZeroShotImageCollator
 
 
-def get_train_dataloader(client_id):
+def get_train_dataloader(client_id, bs):
     dataset_path = constants.DATASET_PATH
     datalist_path = constants.DATALIST_PATH
     transform = transforms.Compose([
@@ -32,7 +33,7 @@ def get_train_dataloader(client_id):
                                              imgtransform=transform, client_id=client_id)
     train_collate_fn = ImageTextContrastiveCollator()
     train_dataloader = DataLoader(train_data,
-                                  batch_size=48,
+                                  batch_size=bs,
                                   collate_fn=train_collate_fn,
                                   shuffle=True,
                                   pin_memory=True,
@@ -76,11 +77,13 @@ class Runner:
         mp.set_start_method('spawn', force=True)
 
 
-    def config(self):
+    def config(self, batch_size):
         self.client_ids = constants.CLIENT_IDS
         self.rounds = constants.ROUNDS
         client_nums = constants.SELECT_NUM
         global_model = MedCLIPModel(vision_cls=MedCLIPVisionModelViT)
+        for param in global_model.parameters():
+            param.requires_grad = False
         select_model = MLPFusion_Mdoel(
             num_classes=client_nums
         )
@@ -90,16 +93,17 @@ class Runner:
         self.server = Server(global_model=global_model,
                              select_model=select_model,
                              client_ids=self.client_ids,)
-
-    def train(self):
+        self.batch_size = batch_size
+    def train(self, fed, gpu):
         server = self.server
-        writer = SummaryWriter('outputs/log/fl-train')
+        device = f'cuda:{gpu}'
+        writer = SummaryWriter(f'outputs/log/fl-train-{fed}')
         for r in range(self.rounds):
-            print(f"round {r} / {self.rounds} is beginning!")
+            print(f"round {r} / {self.rounds} is beginning! fed is {fed}")
             for client_id in self.client_ids:
                 print(f"{client_id} is starting training!")
                 log_file = constants.LOGFILE
-                train_dataloader = get_train_dataloader(client_id)
+                train_dataloader = get_train_dataloader(client_id, self.batch_size)
                 val_global = get_valid_dataloader("no_client", 'global')
                 val_person = get_valid_dataloader(client_id, "test")
                 clients_label = constants.CLIENTS_LABEL
@@ -112,29 +116,42 @@ class Runner:
                                 local_dict=server.global_model.state_dict(),
                                 person_dict=server.person_models[client_id].state_dict(),
                                 select_dict=server.select_model.state_dict(),
-                                select_label=clients_label[client_id]
+                                select_label=clients_label[client_id],
+                                device=device,
+                                fed = fed
                                 )
-                client.validate_global(writer)
-                client.validate_person(writer)
-                p1 = mp.Process(target=client.local_train)
-                p2 = mp.Process(target=client.person_train)
-                p1.start()
-                p2.start()
-                p1.join()
-                p2.join()
-                client.validate_person(writer)
+                # client.validate_global(writer)
+                # client.validate_person(writer)
+                # p1 = mp.Process(target=client.local_train)
+                # p2 = mp.Process(target=client.person_train)
+                # p1.start()
+                # p2.start()
+                # p1.join()
+                # p2.join()
+                # client.validate_person(writer)
+                if fed == 'fed_avg':
+                    client.local_train()
+                elif fed == 'fed_prox':
+                    client.prox_train(server.global_model)
+                elif fed == 'fed_moon':
+                    client.moon_train(server.global_model)
                 diff_local = client.compute_diff(server.global_model, "global")
                 server.receive(client_id=client_id,
                                model=diff_local,
                                model_type="global_model")
-                server.receive(client_id=client_id,
-                               model=client.person_model.state_dict(),
-                               model_type="person_model")
+                # server.receive(client_id=client_id,
+                #                model=client.person_model.state_dict(),
+                #                model_type="person_model")
             server.aggregate()
 def main():
+    parser = argparse.ArgumentParser(description="FedPSM")
+    parser.add_argument('--fed', type=str, default='fed_avg', help='fed strategy')
+    parser.add_argument('--gpu', type=int, default=0, help='gpu')
+    parser.add_argument('--batch_size', type=int, default=48, help='gpu')
+    args = parser.parse_args()
     runner = Runner()
-    runner.config()
-    runner.train()
+    runner.config(args.batch_size)
+    runner.train(args.fed, args.gpu)
 
 
 if __name__ == "__main__":
