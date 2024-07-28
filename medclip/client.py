@@ -40,12 +40,12 @@ class Client:
         self.train_loader = train_dataloader
         self.val_person = val_person
         self.val_global = val_global
-        self.local_model = MedCLIPModel(vision_cls=MedCLIPVisionModelViT).to("cuda:0")
-        self.person_model = MedCLIPModel(vision_cls=MedCLIPVisionModelViT).to("cuda:0")
-        if select_method == 'mlp':
-            self.select_model = MLPFusion_Mdoel(num_classes=constants.SELECT_NUM).to("cuda:0")
-        else:
-            self.select_model = CAFusion_Mdoel(num_classes=constants.SELECT_NUM).to("cuda:0")
+        self.local_model = MedCLIPModel(vision_cls=MedCLIPVisionModelViT).to(self.device)
+        # self.person_model = MedCLIPModel(vision_cls=MedCLIPVisionModelViT).to("cuda:0")
+        # if select_method == 'mlp':
+        #     self.select_model = MLPFusion_Mdoel(num_classes=constants.SELECT_NUM).to("cuda:0")
+        # else:
+        #     self.select_model = CAFusion_Mdoel(num_classes=constants.SELECT_NUM).to("cuda:0")
         self.textvision_lr = constants.VIT_BERT_LEARNING_RATE
         self.weight_decay = constants.WEIGHT_DECAY
         self.select_lr = constants.SELECT_MODEL_LEARNING_RATE

@@ -120,7 +120,7 @@ class Runner:
                                 device=device,
                                 fed = fed
                                 )
-                # client.validate_global(writer)
+                client.validate_global(writer)
                 # client.validate_person(writer)
                 # p1 = mp.Process(target=client.local_train)
                 # p2 = mp.Process(target=client.person_train)
