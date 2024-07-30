@@ -46,7 +46,7 @@ select_model = MLPFusion_Mdoel(num_classes=constants.SELECT_NUM)
 select_dict = torch.load('./outputs/models/best/select_model.pth', map_location=torch.device('cuda:0'))
 select_model.load_state_dict(select_dict)
 select_model.to("cuda:0")
-global_dict = torch.load('./outputs/models/best_model/global_model.pth', map_location=torch.device('cuda:0'))
+global_dict = torch.load('./outputs/models/best_model/global_model_fed_moon.pth', map_location=torch.device('cuda:0'))
 global_model.load_state_dict(global_dict)
 thd = constants.THRESHOLD
 client_ids = [ "client_1", "client_2","client_3", "client_4"]
@@ -117,11 +117,11 @@ def eval_global(client_id):
     cnt = 0
     for i, batch_data in enumerate(val_data):
         print(i)
-        pixel = batch_data["pixel_value"].to("cuda:0")
+        pixel = batch_data["pixel_values"].to("cuda:0")
         logits = []
         for task in tasks:
-            input_ids = batch_data["prompt_input"][task]["input_ids"].view(1, -1).to("cuda:0")
-            attention_mask = batch_data["prompt_input"][task]["attention_mask"].view(1, -1).to("cuda:0")
+            input_ids = batch_data["prompt_inputs"][task]["input_ids"].view(1, -1).to("cuda:0")
+            attention_mask = batch_data["prompt_inputs"][task]["attention_mask"].view(1, -1).to("cuda:0")
             inputs = {"input_ids": input_ids,
                       "attention_mask": attention_mask,
                       "pixel_values": pixel}
@@ -130,7 +130,7 @@ def eval_global(client_id):
             logits.append(logit)
         pred = np.argmax(logits)
         pred_label.append(pred)
-        label_list.append(batch_data['label'])
+        label_list.append(batch_data['labels'])
     labels = torch.cat(label_list).cpu().detach().numpy()
     labels = np.argmax(labels, axis=1)
     labels = labels.tolist()
@@ -174,12 +174,12 @@ def eval_client(client_id):
         print(f'client model {client_id} in {cid} data , its acc is {acc}\n')
         log_metric(client_id=cid,model= client_id,acc=acc)
 
-for i in range(100):
-    for client_id in client_ids:
-        eval_client(client_id)
-for i in range(10):
-    for client_id in client_ids:
-        eval_global(client_id)
+# for i in range(100):
+#     for client_id in client_ids:
+#         eval_client(client_id)
+# for i in range(10):
+for client_id in client_ids:
+    eval_global(client_id)
 
 
 

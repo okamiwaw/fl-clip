@@ -135,6 +135,8 @@ class Runner:
                     client.prox_train(server.global_model)
                 elif fed == 'fed_moon':
                     client.moon_train(server.global_model)
+                elif fed == 'fed_avgm':
+                    client.local_train()
                 diff_local = client.compute_diff(server.global_model, "global")
                 server.receive(client_id=client_id,
                                model=diff_local,

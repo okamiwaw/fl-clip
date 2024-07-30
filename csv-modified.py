@@ -495,16 +495,16 @@
 # filter_rows(input_csv, output_csv, columns)
 
 
-import pandas as pd
-
-# 读取CSV文件
-df = pd.read_csv('client_3_t.csv')
-
-# 添加一列‘client’，并将值设为2
-df['client'] = 2
-
-# 保存修改后的CSV文件
-df.to_csv('client_3_t.csv', index=False)
+# import pandas as pd
+#
+# # 读取CSV文件
+# df = pd.read_csv('client_3_t.csv')
+#
+# # 添加一列‘client’，并将值设为2
+# df['client'] = 2
+#
+# # 保存修改后的CSV文件
+# df.to_csv('client_3_t.csv', index=False)
 
 
 # import pandas as pd
@@ -534,3 +534,27 @@ df.to_csv('client_3_t.csv', index=False)
 # df.to_csv('client_3_test.csv', index=False)
 #
 # print("Prefix 'NIH/' added to 'imgpath' column successfully.")
+import pandas as pd
+
+# 假设CSV文件的路径为 'data.csv'
+file_path = 'a.csv'
+
+# 读取CSV文件
+df = pd.read_csv(file_path)
+
+# 检查'target'列是否存在
+if 'label' not in df.columns:
+    raise ValueError("The target column does not exist in the provided CSV file.")
+
+# 筛选target为1和0的数据
+target_1 = df[df['label'] == 1].sample(n=500, random_state=1)
+target_0 = df[df['label'] == 0].sample(n=500, random_state=1)
+
+# 合并两个数据集
+sampled_df = pd.concat([target_1, target_0])
+
+# 将结果保存到新的CSV文件
+sampled_df.to_csv('rsna.csv', index=False)
+
+print("抽取完成，结果已保存到 'sampled_data.csv' 文件中。")
+
