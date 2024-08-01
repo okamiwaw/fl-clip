@@ -182,10 +182,7 @@ class PromptLearner:
         for i, batch_data in progress_bar:
             optimizer.zero_grad()
             with autocast():
-                index = 0
-                for j in range(batch_data['text_labels'].size(1)):
-                    if batch_data['text_labels'][0, j].item() == 1:
-                        index = j
+                index = batch_data['labels'][0].item()
                 cls = labels[index]
                 tokenizer = AutoTokenizer.from_pretrained(constants.BERT_TYPE, local_files_only=True)
                 tokenizer.model_max_length = 77
