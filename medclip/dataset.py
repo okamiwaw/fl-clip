@@ -424,7 +424,7 @@ class ZeroShotImageDataset(Dataset):
         label = pd.DataFrame(row[self.class_names]).transpose()
         client = row.client
         report = row.report
-        return img, label, client,report
+        return img, label, client, report
 
     def _pad_img(self, img, min_size=224, fill_color=0):
         '''pad img to square.
@@ -477,6 +477,7 @@ class ZeroShotImageCollator:
         for data in batch:
             inputs['pixel_values'].append(data[0])
             inputs['labels'].append(data[1])
+            inputs['reports'].append(data[2])
 
         inputs['labels'] = pd.concat(inputs['labels']).astype(int).values
         if self.mode in ['multiclass', 'binary']:
@@ -490,6 +491,7 @@ class ZeroShotImageCollator:
             'pixel_values': inputs['pixel_values'],
             'prompt_inputs': self.prompt_texts_inputs,
             'labels': inputs['labels'],
+            'reports':inputs['reports'],
         }
 
 
