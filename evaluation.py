@@ -49,7 +49,7 @@ select_model = MLPFusion_Mdoel(num_classes=constants.SELECT_NUM)
 select_dict = torch.load('./outputs/models/best/select_model.pth', map_location=torch.device('cuda:0'))
 select_model.load_state_dict(select_dict)
 select_model.to("cuda:0")
-global_dict = torch.load('./outputs/models/best_model/global_model.pth', map_location=torch.device('cuda:0'))
+global_dict = torch.load('./outputs/models/best_model/global_model_fed_moon.pth', map_location=torch.device('cuda:0'))
 global_model.load_state_dict(global_dict)
 thd = constants.THRESHOLD
 client_ids = [ "client_1", "client_2","client_3", "client_4"]
